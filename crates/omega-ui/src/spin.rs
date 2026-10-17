@@ -194,10 +194,10 @@ const GBC_OUTLINE: &[(f32, f32)] = &[
 const FACE_CELLS: (usize, usize) = (4, 3);
 
 /// How far in from the outline, in drawing units, a side takes its colour from the face.
-const SIDE_SAMPLE: f32 = 9.0;
+pub(crate) const SIDE_SAMPLE: f32 = 9.0;
 
 /// How much light the back edge of a side gets against its front edge.
-const SIDE_BACK_SHADE: f32 = 0.72;
+pub(crate) const SIDE_BACK_SHADE: f32 = 0.72;
 
 /// The GBA cart's outline in drawing units, all the way round clockwise, and the size of the
 /// drawing.
@@ -223,6 +223,7 @@ pub fn outline(model: CartModel) -> (Vec<(f32, f32)>, (f32, f32)) {
 pub fn cart_mesh(model: CartModel) -> Vec<MeshVertex> {
     match model {
         CartModel::Disc => disc::mesh(),
+        CartModel::Genesis => genesis::mesh(),
         _ => {
             let (points, units) = outline(model);
             extruded(&points, units, model.thick())

@@ -13,7 +13,7 @@ Genesis and Mega Drive games run on Genesis Plus GX.
   in its narrow and its interlaced modes as well; Stretch takes a television's 4:3.
 - A game from a European cartridge runs at 50 frames a second, as the core finds it should, with
   its sound at the right pitch.
-- The Genesis and Mega Drive have a cart of their own, one shape for both as the real carts share: a black rounded shell about 1.47 times as wide as it is tall, with a raised pillar down each side, a label well between them and a grid band under it that carries the console's name, GENESIS or MEGA DRIVE. It is drawn from a retail Mega Drive cart photographed square on. Its foot and the long roll of its ends are not modelled, and it still opens on a Super Famicom's board.
+- The Genesis and Mega Drive have a cart of their own, one shape for both as the real carts share: a black rounded shell about 1.47 times as wide as it is tall, with a raised pillar down each side, a label well between them and a grid band under it that carries the console's name, GENESIS or MEGA DRIVE. It is drawn from a retail Mega Drive cart photographed square on. Its front surface is flat across the label and rolls back at each end, as the pillars of a real cart do, about 13 mm across and 10 mm deep. The narrower foot behind is not modelled, and it still opens on a Super Famicom's board.
 - Labels are fetched from ScreenScraper's Mega Drive system, by the ROM's checksum or its name.
 
 ## omega-zero 1.2.0

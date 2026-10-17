@@ -9,14 +9,18 @@
 //!
 //! Behind the main shell, which is about 12.7 mm deep, is a narrower foot, 97 mm across, that
 //! goes into the console, making the whole cart about 17 mm thick. The ends of the shell roll
-//! off in a long curve about 19 mm across. This model keeps the whole cart as one slab of the
-//! full thickness, so neither the foot nor the roll of the ends is drawn: the face is what the
-//! shelf shows, and a cart turned a few degrees as it sways shows little of either.
+//! off in a curve. The pillars are that curve: the front surface is flat across the label and
+//! rolls back over about 13 mm at each end, about 10 mm deep, to the full width. This model has
+//! that roll, with the whole cart as one slab of the full thickness behind it: the narrower foot
+//! is not drawn, as a cart turned a few degrees as it sways shows little of it.
 
 use std::sync::OnceLock;
 
+use omega_gfx::MeshVertex;
+
 use crate::cart::{Board, Spec, PAD};
 use crate::silhouette::{depth_map, rasterise_detail, rasterise_svg, Detail};
+use crate::spin::{SIDE_BACK_SHADE, SIDE_SAMPLE};
 
 const SVG: &str = include_str!("../../assets/genesis_cart.svg");
 const DETAIL_SVG: &str = include_str!("../../assets/genesis_cart_detail.svg");
@@ -134,4 +138,148 @@ pub(crate) fn spec() -> Spec {
             traces_from: 0.78,
         },
     }
+}
+
+/// The cart's width in millimetres, which its roll is measured against.
+const WIDTH_MM: f32 = 108.5;
+
+/// How wide each end's roll is across the face, and how far back it goes, in millimetres: the
+/// width of a pillar, and a little under the depth of the main shell, from the cross-section
+/// of a real cart seen from its connector end.
+pub const ROLL_MM: (f32, f32) = (13.0, 10.0);
+
+/// How many steps the curve of each end is cut into.
+const ROLL_STEPS: usize = 6;
+
+/// Rows the face is cut into: it does not curve up and down.
+const ROWS: usize = 2;
+
+/// How far back the front surface is at `x` units across the drawing, as a share of the cart's
+/// width: nothing across the flat of the label, and curving back to `ROLL_MM.1` at each edge, a
+/// quarter of an ellipse that leaves the flat level and meets the side square.
+pub fn roll_z(x: f32) -> f32 {
+    let (across, deep) = ROLL_MM;
+    let units_per_mm = UNITS.0 / WIDTH_MM;
+    let d = x.min(UNITS.0 - x).max(0.0) / units_per_mm;
+    if d >= across {
+        return 0.0;
+    }
+    let s = (across - d) / across;
+    deep / WIDTH_MM * (1.0 - (1.0 - s * s).max(0.0).sqrt())
+}
+
+/// How steeply the front surface slopes at `x`, back for every step across towards the nearer
+/// edge, held short of the edge itself where it would stand upright.
+fn roll_slope(x: f32) -> f32 {
+    let (across, deep) = ROLL_MM;
+    let units_per_mm = UNITS.0 / WIDTH_MM;
+    let d = x.min(UNITS.0 - x).max(0.0) / units_per_mm;
+    if d >= across {
+        return 0.0;
+    }
+    let s = (across - d) / across;
+    let root = (1.0 - s * s).max(0.0).sqrt().max(0.15);
+    // millimetres back for every millimetre across: the same share of the width either way
+    deep * (s / across) / root
+}
+
+/// The columns the face is cut at, as shares of its width: the roll of each end in equal
+/// steps of its angle, so the curve is finer where it turns, and the flat between.
+fn columns() -> Vec<f32> {
+    let (across, _) = ROLL_MM;
+    let flat = across / WIDTH_MM;
+    let mut left: Vec<f32> = (0..=ROLL_STEPS)
+        .rev()
+        .map(|j| {
+            let t = std::f32::consts::FRAC_PI_2 * j as f32 / ROLL_STEPS as f32;
+            flat * (1.0 - t.sin())
+        })
+        .collect();
+    // from the edge in to the start of the flat
+    left.dedup_by(|a, b| (*a - *b).abs() < 1e-6);
+    let mut all = left.clone();
+    all.extend(left.iter().rev().map(|u| 1.0 - u));
+    all
+}
+
+/// The cart's model: its face, a flat across the label that rolls back at each end, whole texture
+/// laid over it so the picture seen from the front is the face as drawn, and its sides, a wall
+/// for each cut of its outline from where the face is there back to `THICK`, each taking its
+/// colour from the face just inside its edge. Sides come first, so the face covers them.
+pub(crate) fn mesh() -> Vec<MeshVertex> {
+    let (points, (uw, uh)) = outline();
+    let cols = columns();
+    let mut ring: Vec<(f32, f32)> = Vec::new();
+    for (i, &a) in points.iter().enumerate() {
+        let b = points[(i + 1) % points.len()];
+        ring.push(a);
+        // a straight top or bottom edge is cut where the face is, so its wall follows the roll
+        if (a.1 - b.1).abs() < 1e-3 && (b.0 - a.0).abs() > 1.0 {
+            let (lo, hi) = (a.0.min(b.0), a.0.max(b.0));
+            let mut cuts: Vec<f32> = cols
+                .iter()
+                .map(|u| u * uw)
+                .filter(|x| *x > lo + 0.5 && *x < hi - 0.5)
+                .collect();
+            cuts.sort_by(|p, q| p.total_cmp(q));
+            if b.0 < a.0 {
+                cuts.reverse();
+            }
+            ring.extend(cuts.into_iter().map(|x| (x, a.1)));
+        }
+    }
+    let mut out = Vec::new();
+    for (i, &a) in ring.iter().enumerate() {
+        let b = ring[(i + 1) % ring.len()];
+        let (dx, dy) = (b.0 - a.0, b.1 - a.1);
+        let len = (dx * dx + dy * dy).sqrt();
+        if len < 1e-3 {
+            continue;
+        }
+        let normal = [dy / len, -dx / len, 0.0];
+        let sample = |p: (f32, f32)| {
+            [
+                (p.0 - normal[0] * SIDE_SAMPLE) / uw,
+                (p.1 - normal[1] * SIDE_SAMPLE) / uh,
+            ]
+        };
+        let corner = |p: (f32, f32), z: f32, shade: f32| MeshVertex {
+            xyz: [p.0 / uw, p.1 / uh, z],
+            normal,
+            uv: sample(p),
+            shade,
+        };
+        let (a0, b0) = (corner(a, roll_z(a.0), 1.0), corner(b, roll_z(b.0), 1.0));
+        let (a1, b1) = (
+            corner(a, THICK, SIDE_BACK_SHADE),
+            corner(b, THICK, SIDE_BACK_SHADE),
+        );
+        out.extend([a0, b0, b1, a0, b1, a1]);
+    }
+    let rows: Vec<f32> = (0..=ROWS).map(|r| r as f32 / ROWS as f32).collect();
+    let at = |u: f32, v: f32| {
+        let x = u * uw;
+        let slope = roll_slope(x);
+        // the surface faces out towards the nearer edge as it goes back
+        let lean = if x < uw / 2.0 { -slope } else { slope };
+        let len = (lean * lean + 1.0).sqrt();
+        MeshVertex {
+            xyz: [u, v, roll_z(x)],
+            normal: [lean / len, 0.0, -1.0 / len],
+            uv: [u, v],
+            shade: 1.0,
+        }
+    };
+    for r in 0..ROWS {
+        for c in 0..cols.len() - 1 {
+            let (p, q, s, t) = (
+                at(cols[c], rows[r]),
+                at(cols[c + 1], rows[r]),
+                at(cols[c + 1], rows[r + 1]),
+                at(cols[c], rows[r + 1]),
+            );
+            out.extend([p, q, s, p, s, t]);
+        }
+    }
+    out
 }

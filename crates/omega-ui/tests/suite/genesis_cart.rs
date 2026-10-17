@@ -6,10 +6,10 @@ use std::path::PathBuf;
 
 use omega_store::{Cart, Core, Platform};
 use omega_ui::{
-    board_face, cart_box, cart_face, console_name, face_labels, genesis_silhouette, label_colour,
-    label_text, model_box, model_of, seated_box, shelf_scale, shell_for, sockets_for, sockets_of,
-    CartModel, BAND_BOTTOM, BAND_TOP, BOARD_H, BOARD_W, GENESIS_H, GENESIS_LABEL, GENESIS_SHELL,
-    GENESIS_W, SNES_SOCKETS,
+    board_face, cart_box, cart_face, cart_mesh, console_name, face_labels, genesis_roll_z,
+    genesis_silhouette, label_colour, label_text, model_box, model_of, seated_box, shelf_scale,
+    shell_for, sockets_for, sockets_of, CartModel, BAND_BOTTOM, BAND_TOP, BOARD_H, BOARD_W,
+    GENESIS_H, GENESIS_LABEL, GENESIS_ROLL_MM, GENESIS_SHELL, GENESIS_W, SNES_SOCKETS,
 };
 
 /// What the photograph of the real cart measured, as shares: its width over its height, the
@@ -296,5 +296,200 @@ fn a_cart_of_another_console_is_not_given_a_name() {
     for p in [Platform::Gba, Platform::Snes] {
         let f = cart_face(&cart(p, "Sonic"));
         assert_eq!((f.w, f.h), cart_box(p));
+    }
+}
+
+// ---- the roll of the ends: the front surface curves back to the full width, as a real cart's does
+
+const MM: f32 = 108.5;
+
+/// The vertices of the face: the ones laid over the texture so that where each is drawn from the
+/// front is where it is in the texture. A wall's take their colour from just inside its edge.
+fn face_vertices() -> Vec<omega_gfx::MeshVertex> {
+    cart_mesh(CartModel::Genesis)
+        .into_iter()
+        .filter(|v| v.uv == [v.xyz[0], v.xyz[1]])
+        .collect()
+}
+
+#[test]
+fn the_face_is_flat_across_the_label_and_rolls_back_at_both_ends() {
+    let (across, deep) = GENESIS_ROLL_MM;
+    let face = face_vertices();
+    assert!(!face.is_empty());
+    for v in &face {
+        let u = v.xyz[0];
+        if (across / MM..=1.0 - across / MM).contains(&u) {
+            assert_eq!(v.xyz[2], 0.0, "the face is not flat at {u}");
+        }
+    }
+    let deepest = face.iter().map(|v| v.xyz[2]).fold(0.0f32, f32::max);
+    assert!(
+        (deepest * MM - deep).abs() < 0.05,
+        "{} mm back at the edge",
+        deepest * MM
+    );
+    for edge in [0.0, 1.0] {
+        let z = face
+            .iter()
+            .filter(|v| v.xyz[0] == edge)
+            .map(|v| v.xyz[2])
+            .fold(0.0f32, f32::max);
+        assert!(
+            (z * MM - deep).abs() < 0.05,
+            "the edge at {edge} is {} mm back",
+            z * MM
+        );
+    }
+}
+
+#[test]
+fn the_roll_is_as_wide_as_a_pillar_and_the_same_at_both_ends() {
+    let (across, _) = GENESIS_ROLL_MM;
+    let units_per_mm = 434.0 / MM;
+    assert_eq!(genesis_roll_z(across * units_per_mm), 0.0);
+    assert!(genesis_roll_z((across - 0.5) * units_per_mm) > 0.0);
+    for mm in [0.0, 1.0, 3.0, 6.0, 9.0, 12.0] {
+        let (left, right) = (
+            genesis_roll_z(mm * units_per_mm),
+            genesis_roll_z((MM - mm) * units_per_mm),
+        );
+        assert!(
+            (left - right).abs() < 1e-5,
+            "{mm} mm in: {left} against {right}"
+        );
+    }
+    // it is as wide as a pillar is on the face
+    assert!(
+        (across / MM - 39.0 / 300.0).abs() < 0.02,
+        "{} of the width",
+        across / MM
+    );
+}
+
+#[test]
+fn the_roll_leaves_the_flat_level_and_meets_the_edge_steep() {
+    let (across, deep) = GENESIS_ROLL_MM;
+    let units_per_mm = 434.0 / MM;
+    let depth_at = |mm: f32| genesis_roll_z(mm * units_per_mm) * MM;
+    // never comes forward going out towards the edge
+    let steps: Vec<f32> = (0..=26)
+        .map(|i| depth_at(across - i as f32 * across / 26.0))
+        .collect();
+    assert!(steps.windows(2).all(|w| w[1] >= w[0] - 1e-4), "{steps:?}");
+    // a millimetre past the start of the roll it has barely left the flat
+    assert!(
+        depth_at(across - 1.0) < 0.25,
+        "{} mm back a mm in",
+        depth_at(across - 1.0)
+    );
+    // a millimetre from the edge it has gone most of the way back
+    assert!(
+        depth_at(1.0) > 0.6 * deep,
+        "{} mm back a mm from the edge",
+        depth_at(1.0)
+    );
+}
+
+#[test]
+fn seen_from_the_front_the_face_is_the_texture_as_drawn() {
+    for v in face_vertices() {
+        assert_eq!(
+            [v.xyz[0], v.xyz[1]],
+            v.uv,
+            "the face is stretched at {:?}",
+            v.xyz
+        );
+    }
+    // and it spans the whole of the drawing
+    let face = face_vertices();
+    let (lo, hi) = face.iter().fold((1.0f32, 0.0f32), |(l, h), v| {
+        (l.min(v.xyz[0]), h.max(v.xyz[0]))
+    });
+    assert_eq!((lo, hi), (0.0, 1.0));
+}
+
+#[test]
+fn the_face_looks_outwards_where_it_rolls_and_straight_out_where_it_is_flat() {
+    for v in face_vertices() {
+        let n = v.normal;
+        let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
+        assert!((len - 1.0).abs() < 1e-4, "{n:?} is not a unit normal");
+        assert!(n[2] < 0.0, "{n:?} faces away from the front");
+        if v.xyz[2] == 0.0 {
+            assert_eq!(n[0], 0.0, "the flat is not square on at {:?}", v.xyz);
+        } else if v.xyz[0] < 0.5 {
+            assert!(
+                n[0] < 0.0,
+                "the left roll does not face left at {:?}",
+                v.xyz
+            );
+        } else {
+            assert!(
+                n[0] > 0.0,
+                "the right roll does not face right at {:?}",
+                v.xyz
+            );
+        }
+    }
+}
+
+#[test]
+fn the_sides_run_from_the_face_back_to_the_full_thickness() {
+    let thick = CartModel::Genesis.thick();
+    let walls: Vec<_> = cart_mesh(CartModel::Genesis)
+        .into_iter()
+        .filter(|v| v.normal[2] == 0.0)
+        .collect();
+    assert!(!walls.is_empty());
+    for v in &walls {
+        let front = genesis_roll_z(v.xyz[0] * 434.0);
+        let on_front = (v.xyz[2] - front).abs() < 1e-4;
+        let on_back = (v.xyz[2] - thick).abs() < 1e-4;
+        assert!(
+            on_front || on_back,
+            "{:?} is neither on the face nor at the back",
+            v.xyz
+        );
+    }
+    assert!(
+        walls.iter().any(|v| (v.xyz[2] - thick).abs() < 1e-4),
+        "nothing reaches the back"
+    );
+}
+
+#[test]
+fn the_mesh_stays_inside_its_box_and_is_still_few_polygons() {
+    let mesh = cart_mesh(CartModel::Genesis);
+    let thick = CartModel::Genesis.thick();
+    assert_eq!(mesh.len() % 3, 0);
+    for v in &mesh {
+        assert!(
+            v.xyz.iter().all(|c| c.is_finite()) && v.normal.iter().all(|c| c.is_finite()),
+            "{v:?}"
+        );
+        assert!(
+            (0.0..=1.0).contains(&v.xyz[0]) && (0.0..=1.0).contains(&v.xyz[1]),
+            "{:?}",
+            v.xyz
+        );
+        assert!((0.0..=thick + 1e-4).contains(&v.xyz[2]), "{:?}", v.xyz);
+    }
+    assert!(
+        mesh.len() / 3 < 400,
+        "{} triangles is not few",
+        mesh.len() / 3
+    );
+}
+
+#[test]
+fn no_other_model_has_a_rolled_face() {
+    for model in CartModel::ALL
+        .into_iter()
+        .filter(|m| !matches!(m, CartModel::Genesis | CartModel::Disc))
+    {
+        for v in cart_mesh(model).into_iter().filter(|v| v.normal[2] < -0.2) {
+            assert_eq!(v.xyz[2], 0.0, "{model:?} has a face that is not flat");
+        }
     }
 }
