@@ -40,7 +40,7 @@ fn rom(regions: &[u8]) -> Vec<u8> {
     rom
 }
 
-fn run_in(regions: &[u8], native: bool, options: &[(&str, &str)]) -> Option<LibretroCore> {
+fn run_in(regions: &[u8], options: &[(&str, &str)]) -> Option<LibretroCore> {
     let path = core_path().or_else(|| {
         eprintln!("no Genesis Plus GX core on this host, skipping");
         None
@@ -60,14 +60,14 @@ fn run_in(regions: &[u8], native: bool, options: &[(&str, &str)]) -> Option<Libr
     Some(core)
 }
 
-fn run(native: bool, options: &[(&str, &str)]) -> Option<LibretroCore> {
-    run_in(b"JUE", native, options)
+fn run(options: &[(&str, &str)]) -> Option<LibretroCore> {
+    run_in(b"JUE", options)
 }
 
 #[test]
 fn the_core_hands_over_a_whole_forty_column_picture() {
     let _g = common::core_lock();
-    let Some(core) = run(true, &[]) else { return };
+    let Some(core) = run(&[]) else { return };
     assert_eq!(core.video_size(), (320, 224));
     assert_eq!(core.video_xrgb8888().len(), 320 * 224 * 4);
 }
@@ -75,7 +75,7 @@ fn the_core_hands_over_a_whole_forty_column_picture() {
 #[test]
 fn the_core_runs_at_sixty_hertz_with_forty_four_thousand_samples_a_second() {
     let _g = common::core_lock();
-    let Some(mut core) = run(true, &[]) else {
+    let Some(mut core) = run(&[]) else {
         return;
     };
     let av = core.av_info();
@@ -90,7 +90,7 @@ fn the_core_runs_at_sixty_hertz_with_forty_four_thousand_samples_a_second() {
 #[test]
 fn forcing_the_video_chip_to_fifty_hertz_makes_the_core_a_fifty_hertz_one() {
     let _g = common::core_lock();
-    let Some(core) = run(true, &[("genesis_plus_gx_vdp_mode", "50hz")]) else {
+    let Some(core) = run(&[("genesis_plus_gx_vdp_mode", "50hz")]) else {
         return;
     };
     let fps = core.av_info().fps;
@@ -100,7 +100,7 @@ fn forcing_the_video_chip_to_fifty_hertz_makes_the_core_a_fifty_hertz_one() {
 #[test]
 fn forcing_sixty_hertz_keeps_the_core_at_sixty() {
     let _g = common::core_lock();
-    let Some(core) = run(true, &[("genesis_plus_gx_vdp_mode", "60hz")]) else {
+    let Some(core) = run(&[("genesis_plus_gx_vdp_mode", "60hz")]) else {
         return;
     };
     assert!((core.av_info().fps - 59.92).abs() < 0.1);
@@ -109,7 +109,7 @@ fn forcing_sixty_hertz_keeps_the_core_at_sixty() {
 #[test]
 fn the_picture_is_never_bigger_than_omega_zero_takes() {
     let _g = common::core_lock();
-    let Some(core) = run(true, &[]) else { return };
+    let Some(core) = run(&[]) else { return };
     let (w, h) = core.video_size();
     assert!(w <= MAX_FRAME_W && h <= MAX_FRAME_H, "{w}x{h}");
 }
@@ -117,7 +117,7 @@ fn the_picture_is_never_bigger_than_omega_zero_takes() {
 #[test]
 fn a_european_only_rom_runs_at_fifty_hertz_without_being_asked() {
     let _g = common::core_lock();
-    let Some(core) = run_in(b"E  ", true, &[]) else {
+    let Some(core) = run_in(b"E  ", &[]) else {
         return;
     };
     let fps = core.av_info().fps;
@@ -127,7 +127,7 @@ fn a_european_only_rom_runs_at_fifty_hertz_without_being_asked() {
 #[test]
 fn a_world_rom_runs_at_sixty() {
     let _g = common::core_lock();
-    let Some(core) = run_in(b"JUE", true, &[]) else {
+    let Some(core) = run_in(b"JUE", &[]) else {
         return;
     };
     assert!((core.av_info().fps - 59.92).abs() < 0.1);
