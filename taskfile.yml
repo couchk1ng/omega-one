@@ -200,8 +200,9 @@ tasks:
 
   core:src:
     desc: >-
-      Fetch libretro/NAME's source archive at COMMIT into vendor/NAME-src.tar.gz, checking it
-      holds FILE, and note the commit beside it in vendor/NAME-src.sha
+      Fetch libretro/REPO's source archive at COMMIT into vendor/NAME-src.tar.gz, checking it
+      holds FILE, and note the commit beside it in vendor/NAME-src.sha. REPO is NAME unless the
+      repository is named otherwise, as Genesis-Plus-GX is
     internal: true
     run: when_changed
     requires:
@@ -215,8 +216,8 @@ tasks:
         mkdir -p vendor
         rm -f vendor/{{.NAME}}-src.tar.gz vendor/{{.NAME}}-src.sha
         curl -fsSL -o vendor/{{.NAME}}-src.tar.gz \
-          "https://github.com/libretro/{{.NAME}}/archive/{{.COMMIT}}.tar.gz"
-        tar -tzf vendor/{{.NAME}}-src.tar.gz | grep "^{{.NAME}}-{{.COMMIT}}/{{.FILE}}$" > /dev/null
+          "https://github.com/libretro/{{.REPO | default .NAME}}/archive/{{.COMMIT}}.tar.gz"
+        tar -tzf vendor/{{.NAME}}-src.tar.gz | grep "^{{.REPO | default .NAME}}-{{.COMMIT}}/{{.FILE}}$" > /dev/null
         echo "{{.COMMIT}}" > vendor/{{.NAME}}-src.sha
 
   core:update:
@@ -471,7 +472,7 @@ tasks:
       - test "$(cat vendor/genesis_plus_gx_libretro.so.meta 2>/dev/null)" = "$(sh cores/genesis_plus_gx/build.sh stamp {{.GPGX_COMMIT}})"
     cmds:
       - task: core:src
-        vars: {NAME: genesis_plus_gx, COMMIT: '{{.GPGX_COMMIT}}', FILE: Makefile.libretro}
+        vars: {NAME: genesis_plus_gx, REPO: Genesis-Plus-GX, COMMIT: '{{.GPGX_COMMIT}}', FILE: Makefile.libretro}
       - task: device:sh
         vars:
           CMD: >-
