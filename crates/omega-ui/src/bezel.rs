@@ -14,6 +14,19 @@ pub const BEZEL_FILL: [f32; 4] = [
     1.0,
 ];
 
+/// Pure black, which the bands round a Genesis picture are: there is no console body drawn for it
+/// to be, and a picture laid out at 2x leaves only a thin band above and below.
+pub const BLACK_FILL: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+
+/// The colour of the bands a picture leaves round it on `platform`'s screen.
+pub fn band_fill(platform: Platform) -> [f32; 4] {
+    if platform.sega_16bit() {
+        BLACK_FILL
+    } else {
+        BEZEL_FILL
+    }
+}
+
 /// The grey a mark without colours of its own is printed in.
 pub const BEZEL_INK: [u8; 3] = [0x8a, 0x8a, 0x92];
 

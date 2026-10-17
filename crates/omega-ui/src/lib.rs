@@ -39,8 +39,8 @@ pub use backdrop::{
 };
 pub use battery::{bolt_face, draw_gauge, gauge_width, FIGURE_AT, GAUGE_H, GAUGE_W, WALL};
 pub use bezel::{
-    bezel_mark_face, mark_height, mark_rect, overlay_clear, overlay_face, overlay_path, rim,
-    BEZEL_FILL, BEZEL_INK, RIM_W,
+    band_fill, bezel_mark_face, mark_height, mark_rect, overlay_clear, overlay_face, overlay_path,
+    rim, BEZEL_FILL, BEZEL_INK, BLACK_FILL, RIM_W,
 };
 pub use board::{
     board_at, board_face, board_from, board_x, board_y, board_zoom, chip_face, chip_face_in,

@@ -5,10 +5,9 @@ use omega_input::{InputSource, Millis};
 use omega_power::{Platform, Power};
 use omega_store::Cart;
 use omega_ui::{
-    bezel_mark_face, chip_face, chip_face_in, chip_shadow_face, chip_shadow_face_in,
+    band_fill, bezel_mark_face, chip_face, chip_face_in, chip_shadow_face, chip_shadow_face_in,
     generated_face, lid_shadow_face, mark_height, mark_rect, model_shadow, rim, socket_face,
-    wallpaper_face, wears_label, CartFace, CartMeshes, CartModel, UndoFace, BEZEL_FILL,
-    SNES_SOCKETS,
+    wallpaper_face, wears_label, CartFace, CartMeshes, CartModel, UndoFace, SNES_SOCKETS,
 };
 use omega_ui::{overlay_clear, overlay_face, overlay_path};
 
@@ -424,7 +423,7 @@ impl Frontend {
         if overlay.is_some() {
             return Some(Bezel {
                 bands,
-                fill: BEZEL_FILL,
+                fill: band_fill(platform),
                 rims: Vec::new(),
                 marks: Vec::new(),
                 overlay,
@@ -449,7 +448,7 @@ impl Frontend {
             .collect();
         Some(Bezel {
             bands,
-            fill: BEZEL_FILL,
+            fill: band_fill(platform),
             rims,
             marks,
             overlay: None,
