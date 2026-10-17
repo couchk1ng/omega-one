@@ -91,7 +91,11 @@ pub(crate) struct Board {
 
 pub fn gb_shell_of(cart: &Cart) -> Option<GbShell> {
     match cart.platform {
-        Platform::Gba | Platform::Snes | Platform::Ps1 => None,
+        Platform::Gba
+        | Platform::Snes
+        | Platform::Ps1
+        | Platform::Genesis
+        | Platform::MegaDrive => None,
         Platform::Gb | Platform::Gbc => Some(match cart.shell.map(|c| c.outline) {
             Some(Outline::Notched) => GbShell::Notched,
             Some(Outline::Rounded) => GbShell::Rounded,
@@ -112,6 +116,8 @@ pub fn model_of(cart: &Cart) -> CartModel {
         }
         Platform::Snes => CartModel::Snes(snes::shell_of(cart)),
         Platform::Ps1 => CartModel::Disc,
+        // Until it has a model of its own a Genesis cart stands as a Super Famicom's.
+        Platform::Genesis | Platform::MegaDrive => CartModel::Snes(SnesShell::Famicom),
     }
 }
 
@@ -178,7 +184,7 @@ pub fn seated_box(platform: Platform) -> (u32, u32) {
     match platform {
         Platform::Gba => (SEATED_W, SEATED_H),
         Platform::Gb | Platform::Gbc => (SEATED_W, GB_SEATED_H),
-        Platform::Snes => {
+        Platform::Snes | Platform::Genesis | Platform::MegaDrive => {
             let (_, (w, h)) = snes::outline(SnesShell::Famicom);
             (w.round() as u32, h.round() as u32)
         }
@@ -194,7 +200,9 @@ pub fn cart_box(platform: Platform) -> (u32, u32) {
     model_box(match platform {
         Platform::Gba => CartModel::Gba,
         Platform::Gb | Platform::Gbc => CartModel::Gb(GbShell::Notched),
-        Platform::Snes => CartModel::Snes(SnesShell::Famicom),
+        Platform::Snes | Platform::Genesis | Platform::MegaDrive => {
+            CartModel::Snes(SnesShell::Famicom)
+        }
         Platform::Ps1 => CartModel::Disc,
     })
 }
@@ -233,7 +241,10 @@ pub fn face_labels(platform: Platform) -> Vec<(u32, u32)> {
         .filter(|model| match model {
             CartModel::Gba => platform == Platform::Gba,
             CartModel::Gb(_) => matches!(platform, Platform::Gb | Platform::Gbc),
-            CartModel::Snes(_) => platform == Platform::Snes,
+            CartModel::Snes(shell) => {
+                platform == Platform::Snes
+                    || (platform.sega_16bit() && *shell == SnesShell::Famicom)
+            }
             CartModel::Disc => platform == Platform::Ps1,
         })
         .map(|model| match model {

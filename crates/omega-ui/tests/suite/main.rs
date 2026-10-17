@@ -14,6 +14,7 @@ mod contrast;
 mod disc;
 mod dive;
 mod font;
+mod genesis_cart;
 mod hud;
 mod keyboard;
 mod kit;

@@ -89,7 +89,10 @@ pub fn screen_for(platform: Platform, mode: VideoMode, frame: (u32, u32)) -> Scr
 /// Whether `platform` is a console played on a television, whose pictures come in every size
 /// and are laid out by their own, rather than a handheld drawn for the GBA's screen.
 fn is_console(platform: Platform) -> bool {
-    matches!(platform, Platform::Snes | Platform::Ps1)
+    matches!(
+        platform,
+        Platform::Snes | Platform::Ps1 | Platform::Genesis | Platform::MegaDrive
+    )
 }
 
 /// The GBA frame at three panel pixels to a game pixel, which every canvas but 640x480 holds.
@@ -133,7 +136,11 @@ pub fn screen_on_frame(
         };
     }
     match platform {
-        Platform::Gba | Platform::Snes | Platform::Ps1 => {
+        Platform::Gba
+        | Platform::Snes
+        | Platform::Ps1
+        | Platform::Genesis
+        | Platform::MegaDrive => {
             let h = (cw * SRC_H as f32 / SRC_W as f32).round();
             let view = GameView {
                 rect: [0.0, 0.0, cw, h],
@@ -187,6 +194,9 @@ fn console_screen(c: Canvas, platform: Platform, mode: VideoMode, frame: (u32, u
     let (cw, ch) = (c.w as f32, c.h as f32);
     let (w, h) = match (platform, mode) {
         (Platform::Snes, VideoMode::Actual) => snes_whole(cw, ch, frame.1),
+        (Platform::Genesis | Platform::MegaDrive, VideoMode::Actual) => {
+            genesis_whole(cw, ch, frame.1)
+        }
         (Platform::Ps1, VideoMode::Stretch) => (cw, ch),
         _ => four_three(cw, ch),
     };
@@ -213,6 +223,28 @@ fn snes_whole(cw: f32, ch: f32, lines: u32) -> (f32, f32) {
     } as f32;
     let scale = (cw / SNES_W).min(ch / lines).floor().max(1.0);
     let (w, h) = (SNES_W * scale, lines * scale);
+    if w <= cw && h <= ch {
+        (w, h)
+    } else {
+        four_three(cw, ch)
+    }
+}
+
+/// The Genesis's pictures are 320 pixels wide in the usual mode and 256 in the narrow one, and
+/// both fill a television's width, so both are drawn in the same rect.
+const GENESIS_W: f32 = 320.0;
+
+/// The Genesis picture at the largest whole scale the canvas holds, for a frame `lines` high:
+/// 224 lines, or 448 for a game in its interlaced mode, which count as the half they each are.
+/// 320x224 is exactly 2x on 640x480, with bars above and below.
+fn genesis_whole(cw: f32, ch: f32, lines: u32) -> (f32, f32) {
+    let lines = match lines {
+        0 => 224,
+        l if l > 256 => l / 2,
+        l => l,
+    } as f32;
+    let scale = (cw / GENESIS_W).min(ch / lines).floor().max(1.0);
+    let (w, h) = (GENESIS_W * scale, lines * scale);
     if w <= cw && h <= ch {
         (w, h)
     } else {

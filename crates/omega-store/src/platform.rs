@@ -8,15 +8,19 @@ pub enum Platform {
     Gbc,
     Snes,
     Ps1,
+    Genesis,
+    MegaDrive,
 }
 
 impl Platform {
-    pub const ALL: [Platform; 5] = [
+    pub const ALL: [Platform; 7] = [
         Platform::Gba,
         Platform::Gb,
         Platform::Gbc,
         Platform::Snes,
         Platform::Ps1,
+        Platform::Genesis,
+        Platform::MegaDrive,
     ];
 
     pub fn name(self) -> &'static str {
@@ -26,6 +30,8 @@ impl Platform {
             Platform::Gbc => "Game Boy Color",
             Platform::Snes => "Super Nintendo",
             Platform::Ps1 => "PlayStation",
+            Platform::Genesis => "Genesis",
+            Platform::MegaDrive => "Mega Drive",
         }
     }
 
@@ -36,6 +42,8 @@ impl Platform {
             Platform::Gbc => "GBC",
             Platform::Snes => "SNES",
             Platform::Ps1 => "PS1",
+            Platform::Genesis => "Genesis",
+            Platform::MegaDrive => "MD",
         }
     }
 
@@ -45,6 +53,7 @@ impl Platform {
             Platform::Gb | Platform::Gbc => &["gb", "gbc"],
             Platform::Snes => &["sfc", "smc"],
             Platform::Ps1 => &["cue", "chd", "pbp", "m3u"],
+            Platform::Genesis | Platform::MegaDrive => &["md", "gen", "smd", "bin"],
         }
     }
 
@@ -54,6 +63,7 @@ impl Platform {
             Platform::Gb | Platform::Gbc => (160, 144),
             Platform::Snes => (256, 224),
             Platform::Ps1 => (320, 240),
+            Platform::Genesis | Platform::MegaDrive => (320, 224),
         }
     }
 
@@ -61,6 +71,12 @@ impl Platform {
     /// size: only the Game Boys, whose games have no shoulder buttons.
     pub fn owns_shoulders(self) -> bool {
         matches!(self, Platform::Gb | Platform::Gbc)
+    }
+
+    /// Whether this is a Sega Mega Drive or Genesis: the two folders are one machine, kept
+    /// apart so each has its own games and labels.
+    pub fn sega_16bit(self) -> bool {
+        matches!(self, Platform::Genesis | Platform::MegaDrive)
     }
 
     /// Whether held X/Y are turbo A/B: on the handhelds, whose games have no X or Y.

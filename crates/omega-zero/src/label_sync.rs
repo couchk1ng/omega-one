@@ -204,6 +204,7 @@ pub fn system_id(platform: Platform) -> u32 {
         Platform::Gbc => 10,
         Platform::Snes => 4,
         Platform::Ps1 => 57,
+        Platform::Genesis | Platform::MegaDrive => 1,
     }
 }
 
@@ -333,6 +334,11 @@ pub fn label_regions(want: &Want) -> Vec<&'static str> {
                 out.push("wor");
                 out.extend(AMERICA);
             }
+        }
+        Platform::Genesis | Platform::MegaDrive => {
+            // Its file name's regions, then the usual ones: a world release, then America,
+            // Europe and Japan.
+            out.extend(["wor", "us", "eu", "jp"]);
         }
         Platform::Ps1 => {
             let region = ps1::serial_region(&want.code);

@@ -7,6 +7,7 @@ mod core;
 mod font;
 pub mod gb;
 mod gba;
+pub mod genesis;
 pub mod ini;
 mod platform;
 pub mod ps1;

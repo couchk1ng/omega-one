@@ -35,6 +35,8 @@ mod fastforward;
 mod flush;
 mod frame_size;
 mod frames;
+mod genesis_core;
+mod genesis_root;
 mod gpsp;
 mod headphones;
 mod input;

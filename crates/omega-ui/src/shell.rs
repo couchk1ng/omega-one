@@ -101,8 +101,12 @@ pub fn shell_for(cart: &Cart) -> Shell {
             SnesShell::Famicom => SFC_SHELL,
         },
         Platform::Ps1 => DEFAULT_SHELL,
+        Platform::Genesis | Platform::MegaDrive => GENESIS_SHELL,
     }
 }
+
+/// The black plastic of a Genesis or Mega Drive cart.
+pub const GENESIS_SHELL: Shell = shell([0x26, 0x26, 0x2b], Finish::Solid);
 
 pub fn gba_shell_for(code: &str) -> Shell {
     lookup(code, EXACT, FAMILY)

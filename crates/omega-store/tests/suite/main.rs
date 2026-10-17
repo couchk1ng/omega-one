@@ -11,6 +11,7 @@ mod core_config;
 mod durability;
 mod gb;
 mod gba;
+mod genesis;
 mod ini;
 mod platform;
 mod ps1;

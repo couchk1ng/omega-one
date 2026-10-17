@@ -86,6 +86,7 @@ fn stand_in(core: Core) -> MockCore {
         Core::Mgba | Core::Gpsp => MockCore::new(),
         Core::Snes9x | Core::Supafaust => MockCore::sized(256, 224),
         Core::PcsxRearmed => MockCore::sized(320, 240),
+        Core::GenesisPlusGx => MockCore::sized(320, 224),
     }
 }
 
@@ -170,7 +171,7 @@ pub fn colour_option(which: Core, on: bool) -> Option<(&'static str, &'static st
             "gpsp_color_correction",
             if on { "enabled" } else { "disabled" },
         )),
-        Core::Snes9x | Core::Supafaust | Core::PcsxRearmed => None,
+        Core::Snes9x | Core::Supafaust | Core::PcsxRearmed | Core::GenesisPlusGx => None,
     }
 }
 
@@ -235,6 +236,7 @@ pub fn core_options(
             put("supafaust_thread_affinity_emu", "0x0");
             put("supafaust_thread_affinity_ppu", "0x0");
         }
+        Core::GenesisPlusGx => put("genesis_plus_gx_frameskip", "auto"),
         Core::PcsxRearmed => {
             put("pcsx_rearmed_frameskip_type", "auto");
             put("pcsx_rearmed_bios", "auto");

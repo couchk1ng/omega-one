@@ -153,7 +153,10 @@ impl Plastic {
 pub fn board_face(cart: &Cart) -> CartFace {
     let plastic = Plastic::of(shell_for(cart).colour);
     let mut face = blank(BOARD_W, BOARD_H);
-    if cart.platform == Platform::Snes {
+    if cart.platform.sega_16bit() {
+        // For now a Genesis cart opens on a Super Famicom's board, in its own black plastic.
+        snes_board(&mut face, &plastic, SnesShell::Famicom);
+    } else if cart.platform == Platform::Snes {
         snes_board(&mut face, &plastic, snes::shell_of(cart));
     } else {
         shell(&mut face, &plastic);
@@ -615,7 +618,7 @@ pub const SNES_SOCKETS: Sockets = Sockets {
 /// The sockets on the board of a `platform` cart.
 pub fn sockets_for(platform: Platform) -> Sockets {
     match platform {
-        Platform::Snes => SNES_SOCKETS,
+        Platform::Snes | Platform::Genesis | Platform::MegaDrive => SNES_SOCKETS,
         Platform::Gba | Platform::Gb | Platform::Gbc | Platform::Ps1 => GBA_SOCKETS,
     }
 }
@@ -623,7 +626,7 @@ pub fn sockets_for(platform: Platform) -> Sockets {
 /// The sockets `core` is seated among: those of the first system it runs.
 pub fn sockets_of(core: Core) -> Sockets {
     match core {
-        Core::Snes9x | Core::Supafaust => SNES_SOCKETS,
+        Core::Snes9x | Core::Supafaust | Core::GenesisPlusGx => SNES_SOCKETS,
         Core::Mgba | Core::Gpsp | Core::PcsxRearmed => GBA_SOCKETS,
     }
 }

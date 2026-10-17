@@ -133,10 +133,17 @@ fn the_picture_is_the_game_s_own_window_inside_its_view() {
 
 use omega_zero::video_mode::{picture_rect, screen_on_frame};
 
-const CONSOLES: [Platform; 2] = [Platform::Snes, Platform::Ps1];
+const CONSOLES: [Platform; 4] = [
+    Platform::Snes,
+    Platform::Ps1,
+    Platform::Genesis,
+    Platform::MegaDrive,
+];
 
-/// Every picture size the SNES and the PlayStation draw.
-const FRAMES: [(u32, u32); 10] = [
+/// Every picture size the SNES, the PlayStation and the Genesis draw.
+const FRAMES: [(u32, u32); 12] = [
+    (320, 224),
+    (320, 448),
     (256, 224),
     (256, 239),
     (512, 224),
@@ -297,5 +304,72 @@ fn before_its_first_frame_a_console_game_is_laid_out_for_its_usual_picture() {
                 screen_on_frame(c, platform, VideoMode::Actual, platform.picture())
             );
         }
+    }
+}
+
+#[test]
+fn a_genesis_game_is_twice_its_size_in_the_middle_of_every_canvas() {
+    for platform in [Platform::Genesis, Platform::MegaDrive] {
+        for (c, x, y) in [
+            (Canvas::FOUR_THREE, 0.0, 16.0),
+            (Canvas::WIDE, 40.0, 16.0),
+            (Canvas::SQUARE, 40.0, 136.0),
+        ] {
+            let s = screen_on_frame(c, platform, VideoMode::Actual, (320, 224));
+            assert_eq!(s.view.rect, [x, y, 640.0, 448.0], "{platform:?} {c:?}");
+            assert_eq!(s.view.uv, WHOLE_TEXTURE);
+            assert_eq!(s.view.filter, Filter::Sharp);
+            assert_eq!(s.still, s.view);
+        }
+    }
+}
+
+#[test]
+fn a_genesis_picture_in_its_narrow_or_interlaced_mode_fills_the_same_rect() {
+    for c in Canvas::ALL {
+        let usual = screen_on_frame(c, Platform::Genesis, VideoMode::Actual, (320, 224)).view;
+        for frame in [(256, 224), (256, 448), (320, 448), (0, 0)] {
+            let s = screen_on_frame(c, Platform::Genesis, VideoMode::Actual, frame);
+            assert_eq!(s.view, usual, "{c:?} {frame:?}");
+        }
+    }
+}
+
+#[test]
+fn a_stretched_genesis_game_takes_a_television_s_shape() {
+    for (c, rect) in [
+        (Canvas::FOUR_THREE, [0.0, 0.0, 640.0, 480.0]),
+        (Canvas::WIDE, [40.0, 0.0, 640.0, 480.0]),
+        (Canvas::SQUARE, [0.0, 90.0, 720.0, 540.0]),
+    ] {
+        let s = screen_on_frame(c, Platform::Genesis, VideoMode::Stretch, (320, 224));
+        assert_eq!(s.view.rect, rect, "{c:?}");
+        assert_eq!(s.view.filter, Filter::Sharp);
+    }
+}
+
+#[test]
+fn the_genesis_and_the_mega_drive_are_laid_out_alike() {
+    for c in Canvas::ALL {
+        for mode in MODES {
+            for frame in [(320, 224), (256, 224), (320, 448)] {
+                assert_eq!(
+                    screen_on_frame(c, Platform::Genesis, mode, frame),
+                    screen_on_frame(c, Platform::MegaDrive, mode, frame),
+                    "{c:?} {mode:?} {frame:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_genesis_game_with_no_picture_yet_is_laid_out_for_its_usual_one() {
+    for c in Canvas::ALL {
+        assert_eq!(
+            screen_on(c, Platform::Genesis, VideoMode::Actual),
+            screen_on_frame(c, Platform::Genesis, VideoMode::Actual, (320, 224)),
+            "{c:?}"
+        );
     }
 }

@@ -75,6 +75,10 @@ pub fn scan(root: &Path) -> Result<Vec<Cart>, StoreError> {
                     String::new(),
                 ),
                 Platform::Ps1 => (String::new(), crate::ps1::serial(&rom).unwrap_or_default()),
+                Platform::Genesis | Platform::MegaDrive => (
+                    crate::genesis::title(&rom).unwrap_or_default(),
+                    String::new(),
+                ),
             };
             carts.push(Cart {
                 platform,
