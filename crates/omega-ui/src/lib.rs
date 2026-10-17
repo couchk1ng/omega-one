@@ -81,6 +81,10 @@ pub use models::disc::{
     push_disc, push_disc_alone, push_stack, stack_of, DiscStack, StackDive, StackMeshes, DISC_PX,
     MAX_STACK, STACK_DIVE,
 };
+pub use models::genesis::{
+    console_name, silhouette as genesis_silhouette, BAND_BOTTOM, BAND_TOP, H as GENESIS_H,
+    LABEL as GENESIS_LABEL, W as GENESIS_W,
+};
 pub use models::snes::{silhouette as snes_silhouette, SnesShell};
 pub use motion::ease;
 pub use opening::{opening_line, OPENING_ADVANCE, OPENING_PITCH, OPENING_RISE};

@@ -4,7 +4,7 @@ use omega_store::gb::Class;
 use omega_store::{Cart, Outline, Platform};
 
 use crate::label_cut::label_art;
-use crate::models::{disc, snes, snes::SnesShell};
+use crate::models::{disc, genesis, snes, snes::SnesShell};
 use crate::shell::{shell_for, Finish, Shell};
 use crate::silhouette::{
     cart_depth, cart_mask, detail_mask, gb_cart_depth, gb_cart_mask, gb_detail_mask, Detail,
@@ -116,8 +116,7 @@ pub fn model_of(cart: &Cart) -> CartModel {
         }
         Platform::Snes => CartModel::Snes(snes::shell_of(cart)),
         Platform::Ps1 => CartModel::Disc,
-        // Until it has a model of its own a Genesis cart stands as a Super Famicom's.
-        Platform::Genesis | Platform::MegaDrive => CartModel::Snes(SnesShell::Famicom),
+        Platform::Genesis | Platform::MegaDrive => CartModel::Genesis,
     }
 }
 
@@ -136,6 +135,7 @@ pub fn model_shadow(model: CartModel) -> CartFace {
 pub(crate) fn spec(model: CartModel) -> Spec {
     match model {
         CartModel::Snes(shell) => snes::spec(shell),
+        CartModel::Genesis => genesis::spec(),
         CartModel::Disc => disc::spec(),
         CartModel::Gba => Spec {
             w: CART_W,
@@ -184,8 +184,12 @@ pub fn seated_box(platform: Platform) -> (u32, u32) {
     match platform {
         Platform::Gba => (SEATED_W, SEATED_H),
         Platform::Gb | Platform::Gbc => (SEATED_W, GB_SEATED_H),
-        Platform::Snes | Platform::Genesis | Platform::MegaDrive => {
+        Platform::Snes => {
             let (_, (w, h)) = snes::outline(SnesShell::Famicom);
+            (w.round() as u32, h.round() as u32)
+        }
+        Platform::Genesis | Platform::MegaDrive => {
+            let (_, (w, h)) = genesis::outline();
             (w.round() as u32, h.round() as u32)
         }
         Platform::Ps1 => {
@@ -200,9 +204,8 @@ pub fn cart_box(platform: Platform) -> (u32, u32) {
     model_box(match platform {
         Platform::Gba => CartModel::Gba,
         Platform::Gb | Platform::Gbc => CartModel::Gb(GbShell::Notched),
-        Platform::Snes | Platform::Genesis | Platform::MegaDrive => {
-            CartModel::Snes(SnesShell::Famicom)
-        }
+        Platform::Snes => CartModel::Snes(SnesShell::Famicom),
+        Platform::Genesis | Platform::MegaDrive => CartModel::Genesis,
         Platform::Ps1 => CartModel::Disc,
     })
 }
@@ -241,10 +244,8 @@ pub fn face_labels(platform: Platform) -> Vec<(u32, u32)> {
         .filter(|model| match model {
             CartModel::Gba => platform == Platform::Gba,
             CartModel::Gb(_) => matches!(platform, Platform::Gb | Platform::Gbc),
-            CartModel::Snes(shell) => {
-                platform == Platform::Snes
-                    || (platform.sega_16bit() && *shell == SnesShell::Famicom)
-            }
+            CartModel::Snes(_) => platform == Platform::Snes,
+            CartModel::Genesis => platform.sega_16bit(),
             CartModel::Disc => platform == Platform::Ps1,
         })
         .map(|model| match model {
@@ -288,8 +289,37 @@ fn face_of(cart: &Cart, scans: bool) -> CartFace {
     mould_detail(&s, &mut face);
     recess_label(&s, &mut face, &shell);
     paste_label(&s, &mut face, &label);
+    if model == CartModel::Genesis {
+        print_console_name(&s, &mut face, genesis::console_name(cart.platform));
+    }
     clip_to_silhouette(&s, &mut face);
     face
+}
+
+/// `name` on the grid band under a Genesis or Mega Drive label, in the silver of the console's
+/// logo, so a Genesis cart and a Mega Drive cart can be told apart.
+fn print_console_name(s: &Spec, face: &mut CartFace, name: &str) {
+    if name.is_empty() {
+        return;
+    }
+    let Some(font) = text::label_font() else {
+        return;
+    };
+    let (top, bottom) = (genesis::BAND_TOP, genesis::BAND_BOTTOM);
+    let (w, h) = (s.w, bottom - top);
+    let (from, to) = ((top * w * 4) as usize, (bottom * w * 4) as usize);
+    let layout = text::fit_box(
+        font,
+        name,
+        (s.label.2 - 2 * genesis::BAND_PAD) as f32,
+        (h - 2 * genesis::BAND_PAD) as f32,
+        1,
+        genesis::NAME_PX,
+        MIN_PX,
+    );
+    let mut band = face.rgba[from..to].to_vec();
+    text::draw_centred(&mut band, w, h, &layout, genesis::NAME_INK);
+    face.rgba[from..to].copy_from_slice(&band);
 }
 
 fn clip_to_silhouette(s: &Spec, face: &mut CartFace) {

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 434 296">
+  <!-- the ends roll back: the left edge and the top catch the light, the right and the bottom turn away -->
+  <rect x="0" y="20" width="4" height="256" fill="#fff" fill-opacity="0.40"/>
+  <rect x="20" y="0" width="394" height="3" fill="#fff" fill-opacity="0.30"/>
+  <rect x="430" y="20" width="4" height="256" fill="#000" fill-opacity="0.45"/>
+  <rect x="20" y="293" width="394" height="3" fill="#000" fill-opacity="0.35"/>
+  <!-- the raised pillars either side of the label, rounded off towards the ends -->
+  <rect x="4" y="8" width="26" height="280" fill="#fff" fill-opacity="0.10"/>
+  <rect x="404" y="8" width="26" height="280" fill="#000" fill-opacity="0.22"/>
+  <!-- the label well: a groove down each side of it and along its foot -->
+  <rect x="53" y="4" width="3" height="264" fill="#000" fill-opacity="0.85"/>
+  <rect x="378" y="4" width="3" height="264" fill="#000" fill-opacity="0.85"/>
+  <rect x="56" y="268" width="322" height="3" fill="#000" fill-opacity="0.85"/>
+  <rect x="56" y="271" width="322" height="1.5" fill="#fff" fill-opacity="0.18"/>
+  <!-- the grid band under the label -->
+  <rect x="56" y="217" width="322" height="51" fill="#000" fill-opacity="0.55"/>
+  <rect x="63" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="77" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="91" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="105" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="119" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="133" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="147" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="161" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="175" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="189" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="203" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="217" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="231" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="245" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="259" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="273" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="287" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="301" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="315" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="329" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="343" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="357" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="371" y="217" width="0.9" height="51" fill="#fff" fill-opacity="0.16"/>
+  <rect x="56" y="228" width="322" height="0.9" fill="#fff" fill-opacity="0.16"/>
+  <rect x="56" y="240" width="322" height="0.9" fill="#fff" fill-opacity="0.16"/>
+  <rect x="56" y="252" width="322" height="0.9" fill="#fff" fill-opacity="0.16"/>
+  <rect x="56" y="264" width="322" height="0.9" fill="#fff" fill-opacity="0.16"/>
+</svg>
