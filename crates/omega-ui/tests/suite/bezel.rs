@@ -1,8 +1,5 @@
 use omega_store::Platform;
-use omega_ui::{
-    band_fill, bezel_mark_face, mark_height, mark_rect, rim, BEZEL_FILL, BEZEL_INK, BLACK_FILL,
-    RIM_W,
-};
+use omega_ui::{bezel_mark_face, mark_height, mark_rect, rim, BEZEL_FILL, BEZEL_INK, RIM_W};
 
 #[test]
 fn the_mark_is_printed_at_a_size_the_band_can_carry() {
@@ -204,17 +201,11 @@ fn a_few_stray_pixels_over_the_game_are_forgiven() {
 }
 
 #[test]
-fn the_bands_round_a_genesis_picture_are_pure_black() {
-    for platform in [Platform::Genesis, Platform::MegaDrive] {
-        assert_eq!(band_fill(platform), [0.0, 0.0, 0.0, 1.0], "{platform:?}");
-    }
-    assert_eq!(BLACK_FILL, [0.0, 0.0, 0.0, 1.0]);
+fn the_bands_round_every_picture_are_pure_black() {
+    assert_eq!(BEZEL_FILL, [0.0, 0.0, 0.0, 1.0]);
 }
 
 #[test]
-fn every_other_platform_keeps_the_console_s_dark_grey() {
-    for platform in Platform::ALL.into_iter().filter(|p| !p.sega_16bit()) {
-        assert_eq!(band_fill(platform), BEZEL_FILL, "{platform:?}");
-    }
-    assert_ne!(BEZEL_FILL, BLACK_FILL);
+fn the_bands_are_opaque_so_nothing_shows_through_them() {
+    assert_eq!(BEZEL_FILL[3], 1.0);
 }
