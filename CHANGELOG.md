@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+Genesis and Mega Drive games run on Genesis Plus GX.
+
+- Genesis games go in `Games/Genesis` and Mega Drive games in `Games/MD`: a `.md`, `.gen`, `.smd` or
+  `.bin`. They are one machine, a shelf each, so each has its own games, labels, saves and states. A
+  game's name on its cart is read from its ROM's header.
+- The pad is the console's own: Y, B and A are its A, B and C, X is its Y, and L1 and R1 are its X
+  and Z, which the game keeps. X and Y are not turbo, as they are not on the SNES.
+- The picture is drawn at twice its size, 640x448, with a band above and below on a 640x480 screen,
+  in its narrow and its interlaced modes as well; Stretch takes a television's 4:3.
+- A game from a European cartridge runs at 50 frames a second, as the core finds it should, with
+  its sound at the right pitch.
+- A Genesis cart is drawn as a black Super Famicom cart until it has a model of its own.
+- Labels are fetched from ScreenScraper's Mega Drive system, by the ROM's checksum or its name.
+
 ## omega-zero 1.2.0
 
 Supafaust runs SNES games, a game that takes the console down can no longer trap it at boot, and

@@ -43,10 +43,11 @@ is the most useful thing you can send.
   the screen into the handheld, and the game comes on like a tube TV. At power-on, an opening in the
   style of Mega Man X5's boot terminal tells you the handheld's memory, chip and battery, then
   fades into the shelf.
-- Five cores: mGBA and gpSP for the GBA and Snes9x and Supafaust for the SNES, chosen per cart;
-  mGBA for the Game Boys; PCSX ReARMed for the PlayStation, with a BIOS of its own built in. GBA
-  fills a 640x480 screen and the PlayStation fills it at 4:3; the SNES is drawn at twice its size,
-  and Game Boy stays at 3x.
+- Six cores: mGBA and gpSP for the GBA and Snes9x and Supafaust for the SNES, chosen per cart;
+  mGBA for the Game Boys; PCSX ReARMed for the PlayStation, with a BIOS of its own built in;
+  Genesis Plus GX for the Genesis and Mega Drive. GBA fills a 640x480 screen and the PlayStation
+  fills it at 4:3; the SNES and the Genesis are drawn at twice their size, and Game Boy stays at
+  3x.
 - A PlayStation game on several discs is one game: DISC, on SELECT+MENU in a game, puts another
   disc in, and the game resumes with the disc that was in the drive.
 - Resume on boot, save states with a switcher, rewind (not on the PlayStation), fast-forward,
@@ -101,7 +102,9 @@ is the most useful thing you can send.
    microSD card, put it in **SD1** and boot once.
 2. Copy the contents of the [latest release](https://github.com/oauramos/omega-zero/releases/latest)
    to the root of that card.
-3. Put your games in `Games/GBA`, `Games/GB`, `Games/GBC`, `Games/SNES` and `Games/PS1`. A
+3. Put your games in `Games/GBA`, `Games/GB`, `Games/GBC`, `Games/SNES`, `Games/PS1`,
+   `Games/Genesis` and `Games/MD` (a Genesis game is a `.md`, `.gen`, `.smd` or `.bin`; the two
+   folders are the same machine, kept apart so each has its own games and labels). A
    PlayStation game is a `.cue` with its `.bin`, a `.chd`, a `.pbp` or an `.m3u`; a real
    PlayStation BIOS, such as `scph5501.bin`, is used from `BIOS/` when it is there.
 4. Boot. On the shelf, START opens Settings and a tap of SELECT shows every button.
@@ -123,8 +126,10 @@ omega-zero is made by **Otávio ([@oauramos](https://github.com/oauramos))**.
 - Emulation by [mGBA](https://mgba.io) (MPL-2.0) and [gpSP](https://github.com/libretro/gpsp)
   (GPL-2.0) for the Game Boys; [Snes9x](https://github.com/libretro/snes9x) (free for
   non-commercial use only) and [Supafaust](https://github.com/libretro/supafaust), Mednafen's
-  snes_faust (GPL-2.0), for the SNES; and
-  [PCSX ReARMed](https://github.com/libretro/pcsx_rearmed) (GPL-2.0) for the PlayStation. Their
+  snes_faust (GPL-2.0), for the SNES;
+  [PCSX ReARMed](https://github.com/libretro/pcsx_rearmed) (GPL-2.0) for the PlayStation; and
+  [Genesis Plus GX](https://github.com/libretro/Genesis-Plus-GX) (free for non-commercial use
+  only) for the Genesis and Mega Drive. Their
   licences and patches, and the source of all but mGBA, ship in `System/licenses/`.
 - Type is [Pixel Code](https://github.com/qwerasd205/PixelCode) by Qwerasd (SIL OFL 1.1); every
   icon is drawn as pixel art. The LCD mask is derived from GigaHerz's LCD3x.
