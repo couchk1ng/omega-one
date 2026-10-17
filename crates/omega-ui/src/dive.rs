@@ -12,7 +12,7 @@ use crate::models::disc::{self, DiscStack, StackDive, STACK_DIVE};
 use crate::motion::ease;
 use crate::plate::UndoFace;
 use crate::shelf::{foot_y, model_scale};
-use crate::spin::{self, Pose};
+use crate::spin::{self, CartModel, Pose};
 use crate::sprite::SPRITE_PX;
 
 /// The alert shown on a refused cart as it comes back out: a warning sign drawn a pixel at a
@@ -55,6 +55,18 @@ pub const ALERT_H: u32 = ALERT.len() as u32;
 /// The alert in `pal`, one texel to an art pixel, to upload NEAREST.
 pub fn alert_face(pal: &Palette) -> UndoFace {
     keyed(&ALERT, pal)
+}
+
+/// How many times a disc turns in the canvas on its way into the handheld.
+pub const SPIN_TURNS: f32 = 3.0;
+
+/// How far a disc is turned in the canvas, in radians, `seat` of the way in: from a standstill,
+/// gathering speed all the way, so that it spins up as it is pulled down and is going fastest as
+/// it leaves the screen. Coming out it is the same played backwards: the turn unwinds and the
+/// disc comes to rest on the shelf, square.
+pub fn spin_turn(seat: f32) -> f32 {
+    let u = seat.clamp(0.0, 1.0);
+    std::f32::consts::TAU * SPIN_TURNS * u * u
 }
 
 /// One art pixel on the screen.
@@ -114,6 +126,11 @@ impl CartDive<'_> {
         }
 
         let ((x, y, cw, ch), pose) = self.placed(seat, true);
+        // a disc spins up as it goes in; a cart does not turn in the canvas at all
+        let turn = match model_of(self.cart) {
+            CartModel::Disc => spin_turn(seat),
+            _ => 0.0,
+        };
         if self.game && self.screen > 0.0 {
             out.push(Draw::Game);
         }
@@ -124,7 +141,7 @@ impl CartDive<'_> {
         match (self.face, self.stack, self.mesh) {
             (Some(_), Some(stack), _) => match STACK_DIVE {
                 StackDive::Whole => {
-                    disc::push_stack(out, (x, y, cw, ch), &stack, [1.0; 4], 0.0, pose.yaw)
+                    disc::push_stack(out, (x, y, cw, ch), &stack, [1.0; 4], turn, pose.yaw)
                 }
                 // the discs behind the first stay where the stack came to, at the top of its
                 // rise, and go dark with the shelf behind them
@@ -134,7 +151,7 @@ impl CartDive<'_> {
                     for disc in (1..stack.discs).rev() {
                         disc::push_disc(out, rect, &stack, disc, [k, k, k, 1.0], 0.0, held.yaw);
                     }
-                    disc::push_disc(out, (x, y, cw, ch), &stack, 0, [1.0; 4], 0.0, pose.yaw);
+                    disc::push_disc(out, (x, y, cw, ch), &stack, 0, [1.0; 4], turn, pose.yaw);
                 }
             },
             (Some(tex), None, Some(mesh)) => out.push(spin::posed_cart(
@@ -142,12 +159,12 @@ impl CartDive<'_> {
                 mesh,
                 tex,
                 [1.0, 1.0, 1.0, 1.0],
-                0.0,
+                turn,
                 pose.yaw,
             )),
             (Some(tex), None, None) => {
-                spin::push_cart_side(out, (x, y, cw, ch), tex, 0.0, pose.yaw, 1.0, 1.0);
-                out.push(spin::posed_face((x, y, cw, ch), tex, 1.0, 0.0, pose.yaw));
+                spin::push_cart_side(out, (x, y, cw, ch), tex, turn, pose.yaw, 1.0, 1.0);
+                out.push(spin::posed_face((x, y, cw, ch), tex, 1.0, turn, pose.yaw));
             }
             (None, _, _) => {
                 let c = label_colour(&label_text(self.cart));

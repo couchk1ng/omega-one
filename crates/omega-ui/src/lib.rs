@@ -59,7 +59,7 @@ pub use cart::{
 };
 pub use chrome::{edge, housing, set_theme, ChromeColours, BAR_H};
 pub use clock::{clock_label, date_time_text, hhmm, zone_text, ClockPicker, Field};
-pub use dive::{alert_face, CartDive, ALERT_H, ALERT_W};
+pub use dive::{alert_face, spin_turn, CartDive, ALERT_H, ALERT_W, SPIN_TURNS};
 pub use draw::{out_h, out_w, Draw, MeshId, TexId};
 pub use footer::Printed;
 pub use hud::{

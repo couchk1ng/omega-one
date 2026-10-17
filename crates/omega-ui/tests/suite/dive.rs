@@ -6,8 +6,9 @@ use omega_store::{Cart, Platform};
 use omega_ui::kit::palette::palette;
 use omega_ui::{
     alert_face, foot_y, label_colour, label_text, model_box, model_of, model_scale,
-    model_shelf_box, out_h, out_w, shelf_box, shelf_scale, stage_y, CartDive, CartModel, Draw,
-    MeshId, Pose, Shelf, SnesShell, TexId, ALERT_H, ALERT_W, SPRITE_PX, TOP_BAR_H,
+    model_shelf_box, out_h, out_w, shelf_box, shelf_scale, spin_turn, stage_y, CartDive, CartModel,
+    DiscStack, Draw, MeshId, Pose, Shelf, SnesShell, StackMeshes, TexId, ALERT_H, ALERT_W,
+    SPIN_TURNS, SPRITE_PX, TOP_BAR_H,
 };
 
 /// What the app hands the dive to draw with: the cart's face, its model, and the alert.
@@ -165,6 +166,8 @@ fn drawn(dive: &CartDive) -> Vec<Draw> {
 fn face_in(out: &[Draw]) -> Option<(Quad, f32)> {
     out.iter().find_map(|d| match *d {
         Draw::Tex { tex, .. } if tex == FACE => Some((quad(d), 0.0)),
+        // a disc spinning in the canvas, level
+        Draw::Turned { tex, .. } if tex == FACE => Some((quad(d), 0.0)),
         Draw::Spun {
             tex, yaw, depth, ..
         } if tex == FACE && depth == 0.0 => Some((quad(d), yaw)),
@@ -739,6 +742,200 @@ fn the_alert_is_drawn_on_the_art_grid_in_the_middle_of_the_cart_as_it_comes_out(
                 "at seat {seat} {name}'s alert is in the middle at {ax}, {ay} against the cart's \
                  {cx}, {cy}"
             );
+        }
+    }
+}
+
+// ---- a disc spinning up as it goes in
+
+const TAU: f32 = std::f32::consts::TAU;
+
+/// `c` going in `seat` of the way, drawn with a model, as the app draws a disc.
+fn going_in_modelled(c: &Cart, seat: f32) -> CartDive<'_> {
+    CartDive {
+        mesh: Some(MESH),
+        ..going_in(c, seat)
+    }
+}
+
+/// How far `c` is turned in the canvas `seat` of the way in, drawn with its model.
+fn model_turn(c: &Cart, seat: f32) -> f32 {
+    drawn(&going_in_modelled(c, seat))
+        .iter()
+        .find_map(|d| match *d {
+            Draw::Model { tex, turn, .. } if tex == FACE => Some(turn),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("no model drawn {seat} of the way in"))
+}
+
+/// How far `c` is turned `seat` of the way in, drawn flat, with no model.
+fn flat_turn(c: &Cart, seat: f32) -> f32 {
+    drawn(&going_in(c, seat))
+        .iter()
+        .find_map(|d| match *d {
+            Draw::Spun {
+                tex, turn, depth, ..
+            } if tex == FACE && depth == 0.0 => Some(turn),
+            Draw::Turned { tex, turn, .. } if tex == FACE => Some(turn),
+            Draw::Tex { tex, .. } if tex == FACE => Some(0.0),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("no face drawn {seat} of the way in"))
+}
+
+fn seats() -> Vec<f32> {
+    (0..=40).map(|i| (i as f32 / 40.0).min(LAST)).collect()
+}
+
+#[test]
+fn a_disc_is_at_a_standstill_where_the_shelf_left_it() {
+    assert_eq!(model_turn(&disc(), 0.0), 0.0);
+    assert_eq!(flat_turn(&disc(), 0.0), 0.0);
+}
+
+#[test]
+fn a_disc_spins_up_and_never_slows_on_its_way_in() {
+    let turns: Vec<f32> = seats()
+        .into_iter()
+        .map(|s| model_turn(&disc(), s))
+        .collect();
+    let speeds: Vec<f32> = turns.windows(2).map(|w| w[1] - w[0]).collect();
+    assert!(
+        speeds.iter().all(|s| *s > 0.0),
+        "the disc stopped or went back: {speeds:?}"
+    );
+    assert!(
+        speeds.windows(2).all(|w| w[1] > w[0]),
+        "the disc did not gather speed all the way: {speeds:?}"
+    );
+}
+
+#[test]
+fn it_starts_slowly_the_way_a_disc_does_from_rest() {
+    let early = model_turn(&disc(), 0.1);
+    assert!(
+        early > 0.0 && early < 0.25,
+        "{early} radians a tenth of the way in"
+    );
+    let late = model_turn(&disc(), 0.9) - model_turn(&disc(), 0.8);
+    let first = model_turn(&disc(), 0.1) - model_turn(&disc(), 0.0);
+    assert!(
+        late > 10.0 * first,
+        "it is not spinning much faster at the end: {first} then {late}"
+    );
+}
+
+#[test]
+fn a_disc_has_turned_its_whole_turns_by_the_time_it_is_in() {
+    assert!((spin_turn(1.0) - TAU * SPIN_TURNS).abs() < 1e-4);
+    assert!((model_turn(&disc(), LAST) - TAU * SPIN_TURNS).abs() < 0.05);
+}
+
+#[test]
+fn the_spin_is_the_same_flat_and_with_a_model() {
+    for seat in seats() {
+        let (a, b) = (flat_turn(&disc(), seat), model_turn(&disc(), seat));
+        assert!((a - b).abs() < 1e-4, "{seat}: flat {a}, modelled {b}");
+    }
+}
+
+#[test]
+fn no_cart_turns_in_the_canvas_only_a_disc() {
+    for (name, c) in both().into_iter().filter(|(n, _)| !n.contains("disc")) {
+        for seat in seats() {
+            assert_eq!(
+                model_turn(&c, seat),
+                0.0,
+                "{name} modelled {seat} of the way in"
+            );
+            assert_eq!(flat_turn(&c, seat), 0.0, "{name} flat {seat} of the way in");
+        }
+    }
+}
+
+#[test]
+fn the_spin_unwinds_to_nothing_as_a_disc_comes_back_out() {
+    // coming out is the same played backwards, so it is the same function of how far in it is
+    let mut back: Vec<f32> = seats()
+        .into_iter()
+        .rev()
+        .map(|s| model_turn(&disc(), s))
+        .collect();
+    assert!(back.windows(2).all(|w| w[1] < w[0]), "{back:?}");
+    assert_eq!(
+        back.pop(),
+        Some(0.0),
+        "it does not come to rest square on the shelf"
+    );
+}
+
+#[test]
+fn the_turn_is_clamped_outside_the_way_in() {
+    assert_eq!(spin_turn(-1.0), 0.0);
+    assert_eq!(spin_turn(0.0), 0.0);
+    assert!((spin_turn(3.0) - TAU * SPIN_TURNS).abs() < 1e-4);
+}
+
+#[test]
+fn it_never_turns_so_far_between_frames_that_it_seems_to_turn_back() {
+    // at its fastest it gains 2 * TAU * SPIN_TURNS a unit of the way in; a way in that lasts a
+    // third of a second at 60 frames is 20 of them
+    let step = 2.0 * TAU * SPIN_TURNS / 20.0;
+    assert!(
+        step < std::f32::consts::PI,
+        "{step} radians a frame is more than half a turn"
+    );
+}
+
+fn stack_of(discs: usize) -> DiscStack {
+    let mut next = 100;
+    DiscStack {
+        tex: FACE,
+        discs,
+        meshes: StackMeshes::build(|_| {
+            next += 1;
+            MeshId::from_raw(next)
+        }),
+    }
+}
+
+#[test]
+fn every_disc_of_a_game_on_several_discs_turns_together() {
+    let c = disc();
+    for discs in [2, 3, 4] {
+        let seat = 0.6;
+        let dive = CartDive {
+            stack: Some(stack_of(discs)),
+            ..going_in(&c, seat)
+        };
+        let out = drawn(&dive);
+        let turns: Vec<f32> = out
+            .iter()
+            .filter_map(|d| match *d {
+                Draw::Model { tex, turn, .. } if tex == FACE => Some(turn),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(turns.len(), discs, "{discs} discs");
+        assert!(
+            turns.iter().all(|t| (*t - spin_turn(seat)).abs() < 1e-4),
+            "{turns:?}"
+        );
+        assert!(turns[0] > 0.0);
+    }
+}
+
+#[test]
+fn a_stack_is_at_a_standstill_where_the_shelf_left_it() {
+    let c = disc();
+    let dive = CartDive {
+        stack: Some(stack_of(2)),
+        ..going_in(&c, 0.0)
+    };
+    for d in drawn(&dive) {
+        if let Draw::Model { turn, .. } = d {
+            assert_eq!(turn, 0.0);
         }
     }
 }
