@@ -148,6 +148,10 @@ const WIDTH_MM: f32 = 108.5;
 /// of a real cart seen from its connector end.
 pub const ROLL_MM: (f32, f32) = (13.0, 10.0);
 
+/// How much darker the right end of the face is where it has turned all the way back, the end
+/// the light falls away from.
+const ROLL_SHADE: f32 = 0.2;
+
 /// How many steps the curve of each end is cut into.
 const ROLL_STEPS: usize = 6;
 
@@ -166,21 +170,6 @@ pub fn roll_z(x: f32) -> f32 {
     }
     let s = (across - d) / across;
     deep / WIDTH_MM * (1.0 - (1.0 - s * s).max(0.0).sqrt())
-}
-
-/// How steeply the front surface slopes at `x`, back for every step across towards the nearer
-/// edge, held short of the edge itself where it would stand upright.
-fn roll_slope(x: f32) -> f32 {
-    let (across, deep) = ROLL_MM;
-    let units_per_mm = UNITS.0 / WIDTH_MM;
-    let d = x.min(UNITS.0 - x).max(0.0) / units_per_mm;
-    if d >= across {
-        return 0.0;
-    }
-    let s = (across - d) / across;
-    let root = (1.0 - s * s).max(0.0).sqrt().max(0.15);
-    // millimetres back for every millimetre across: the same share of the width either way
-    deep * (s / across) / root
 }
 
 /// The columns the face is cut at, as shares of its width: the roll of each end in equal
@@ -258,16 +247,21 @@ pub(crate) fn mesh() -> Vec<MeshVertex> {
     }
     let rows: Vec<f32> = (0..=ROWS).map(|r| r as f32 / ROWS as f32).collect();
     let at = |u: f32, v: f32| {
-        let x = u * uw;
-        let slope = roll_slope(x);
-        // the surface faces out towards the nearer edge as it goes back
-        let lean = if x < uw / 2.0 { -slope } else { slope };
-        let len = (lean * lean + 1.0).sqrt();
+        let z = roll_z(u * uw);
+        // The renderer folds a polygon away by testing each vertex's own normal against the eye,
+        // so every vertex of a polygon has to agree. The face keeps the one normal of a flat
+        // face, and the roll is shaded by the vertex's light instead: the end the light falls
+        // away from, the right, darkens as it turns back.
+        let shade = if u < 0.5 {
+            1.0
+        } else {
+            1.0 - ROLL_SHADE * (z / (ROLL_MM.1 / WIDTH_MM))
+        };
         MeshVertex {
-            xyz: [u, v, roll_z(x)],
-            normal: [lean / len, 0.0, -1.0 / len],
+            xyz: [u, v, z],
+            normal: [0.0, 0.0, -1.0],
             uv: [u, v],
-            shade: 1.0,
+            shade,
         }
     };
     for r in 0..ROWS {

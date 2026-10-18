@@ -410,28 +410,91 @@ fn seen_from_the_front_the_face_is_the_texture_as_drawn() {
 }
 
 #[test]
-fn the_face_looks_outwards_where_it_rolls_and_straight_out_where_it_is_flat() {
+fn every_vertex_of_the_face_has_the_one_normal_of_a_flat_face() {
     for v in face_vertices() {
-        let n = v.normal;
-        let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
-        assert!((len - 1.0).abs() < 1e-4, "{n:?} is not a unit normal");
-        assert!(n[2] < 0.0, "{n:?} faces away from the front");
-        if v.xyz[2] == 0.0 {
-            assert_eq!(n[0], 0.0, "the flat is not square on at {:?}", v.xyz);
-        } else if v.xyz[0] < 0.5 {
+        assert_eq!(v.normal, [0.0, 0.0, -1.0], "at {:?}", v.xyz);
+    }
+}
+
+#[test]
+fn every_polygon_of_the_mesh_has_one_normal() {
+    // the renderer folds a polygon away by testing each of its vertices' normals against the eye,
+    // so one whose vertices disagree is stretched across the screen as it turns
+    for model in CartModel::ALL.into_iter().filter(|m| *m != CartModel::Disc) {
+        for (i, tri) in cart_mesh(model).chunks(3).enumerate() {
             assert!(
-                n[0] < 0.0,
-                "the left roll does not face left at {:?}",
-                v.xyz
-            );
-        } else {
-            assert!(
-                n[0] > 0.0,
-                "the right roll does not face right at {:?}",
-                v.xyz
+                tri[0].normal == tri[1].normal && tri[1].normal == tri[2].normal,
+                "{model:?}: polygon {i} has different normals at its corners: {:?}",
+                tri.iter().map(|v| v.normal).collect::<Vec<_>>()
             );
         }
     }
+}
+
+/// The model vertex shader's own test for a vertex facing away from the eye, for a model drawn
+/// `w` by `h` and spun `yaw` about its upright middle.
+fn faces_away(v: &omega_gfx::MeshVertex, w: f32, h: f32, yaw: f32) -> bool {
+    let (lx, ly) = (v.xyz[0] * w - w * 0.5, v.xyz[1] * h - h * 0.5);
+    let depth = v.xyz[2] * w;
+    let (s, c) = yaw.sin_cos();
+    let across = lx * c - depth * s;
+    let back = lx * s + depth * c;
+    let n = [
+        v.normal[0] * c - v.normal[2] * s,
+        v.normal[1],
+        v.normal[0] * s + v.normal[2] * c,
+    ];
+    n[0] * across + n[1] * ly + n[2] * (back + omega_gfx::FOCAL) >= 0.0
+}
+
+#[test]
+fn no_polygon_is_part_towards_the_eye_and_part_away_at_any_angle_of_the_sway() {
+    // the shelf sways a cart 20 degrees either way and leans it up to 20 more into a scroll
+    for model in CartModel::ALL {
+        let (w, h) = model_box(model);
+        let mesh = cart_mesh(model);
+        for step in -140..=140 {
+            let yaw = step as f32 * 0.005;
+            let torn = mesh
+                .chunks(3)
+                .filter(|tri| {
+                    let away: Vec<bool> = tri
+                        .iter()
+                        .map(|v| faces_away(v, w as f32, h as f32, yaw))
+                        .collect();
+                    away.iter().any(|a| *a) && away.iter().any(|a| !*a)
+                })
+                .count();
+            assert_eq!(
+                torn, 0,
+                "{model:?} at {yaw:.3} rad has {torn} polygons stretched across the screen"
+            );
+        }
+    }
+}
+
+#[test]
+fn the_roll_is_shaded_on_the_end_the_light_falls_away_from_and_nowhere_else() {
+    let (_, deep) = GENESIS_ROLL_MM;
+    for v in face_vertices() {
+        let (u, z) = (v.xyz[0], v.xyz[2]);
+        assert!(v.shade > 0.0 && v.shade <= 1.0, "{} at {u}", v.shade);
+        if u < 0.5 || z == 0.0 {
+            assert_eq!(v.shade, 1.0, "the face is shaded at {u}");
+        } else {
+            let want = 1.0 - 0.2 * (z * MM / deep);
+            assert!(
+                (v.shade - want).abs() < 1e-4,
+                "{} at {u}, wanted {want}",
+                v.shade
+            );
+        }
+    }
+    let darkest = face_vertices()
+        .iter()
+        .map(|v| v.shade)
+        .fold(1.0f32, f32::min);
+    assert!(darkest > 0.75 && darkest < 0.9, "{darkest}");
 }
 
 #[test]
