@@ -8,15 +8,21 @@ use omega_store::{Cart, Core, Platform};
 use omega_ui::{
     board_face, cart_box, cart_face, cart_mesh, console_name, face_labels, genesis_roll_z,
     genesis_silhouette, label_colour, label_text, model_box, model_of, seated_box, shelf_scale,
-    shell_for, sockets_for, sockets_of, CartModel, BAND_BOTTOM, BAND_TOP, BOARD_H, BOARD_W,
-    GENESIS_H, GENESIS_LABEL, GENESIS_ROLL_MM, GENESIS_SHELL, GENESIS_W, SNES_SOCKETS,
+    shell_for, sockets_for, sockets_of, CartModel, BAND_BOTTOM, BAND_LINE, BAND_PANEL, BAND_TOP,
+    BOARD_H, BOARD_W, GENESIS_ART_H, GENESIS_H, GENESIS_LABEL, GENESIS_ROLL_MM, GENESIS_SHELL,
+    GENESIS_W, SNES_SOCKETS,
 };
 
 /// What the photograph of the real cart measured, as shares: its width over its height, the
 /// label window's share of the width and of the height, and a pillar's share of the width.
 const REAL_WIDE_OVER_TALL: f32 = 1.465;
 const REAL_LABEL_OF_WIDTH: f32 = 0.74;
-const REAL_LABEL_FOOT_OF_HEIGHT: f32 = 0.727;
+const REAL_ART_FOOT_OF_HEIGHT: f32 = 0.727;
+const REAL_RECESS_FOOT_OF_HEIGHT: f32 = 0.90;
+/// A scan of a real label from ScreenScraper, and the recess measured on the cart: both are
+/// wider than they are tall by about this much.
+const REAL_SCAN_WIDE_OVER_TALL: f32 = 1.289;
+const REAL_RECESS_WIDE_OVER_TALL: f32 = 1.205;
 const REAL_PILLAR_OF_WIDTH: f32 = 0.122;
 
 fn cart(platform: Platform, title: &str) -> Cart {
@@ -67,7 +73,7 @@ fn the_face_is_in_the_proportions_of_the_real_cart() {
 }
 
 #[test]
-fn the_label_window_is_where_a_real_labels_is() {
+fn the_label_window_is_the_whole_recess_where_a_real_labels_is() {
     let (x, y, w, h) = GENESIS_LABEL;
     let (cw, ch) = (GENESIS_W as f32, GENESIS_H as f32);
     assert!(
@@ -76,8 +82,8 @@ fn the_label_window_is_where_a_real_labels_is() {
         w as f32 / cw
     );
     assert!(
-        near((y + h) as f32 / ch, REAL_LABEL_FOOT_OF_HEIGHT, 0.02),
-        "its foot is {} of the way down",
+        near((y + h) as f32 / ch, REAL_RECESS_FOOT_OF_HEIGHT, 0.03),
+        "the recess ends {} of the way down",
         (y + h) as f32 / ch
     );
     assert!(
@@ -90,6 +96,24 @@ fn the_label_window_is_where_a_real_labels_is() {
         GENESIS_W,
         "the label is not between two equal pillars"
     );
+    // it is the shape of a real label: between the recess measured and a scan of a label
+    let shape = w as f32 / h as f32;
+    assert!(
+        shape > REAL_RECESS_WIDE_OVER_TALL - 0.03 && shape < REAL_SCAN_WIDE_OVER_TALL + 0.03,
+        "{shape:.3} wide for each tall, between {REAL_RECESS_WIDE_OVER_TALL} and {REAL_SCAN_WIDE_OVER_TALL}"
+    );
+}
+
+#[test]
+fn the_art_ends_where_the_grid_band_of_a_real_label_begins() {
+    let (_, y, _, _) = GENESIS_LABEL;
+    let foot = (y + GENESIS_ART_H) as f32 / GENESIS_H as f32;
+    assert!(
+        near(foot, REAL_ART_FOOT_OF_HEIGHT, 0.03),
+        "the art ends {foot} of the way down"
+    );
+    assert_eq!(BAND_TOP, y + GENESIS_ART_H);
+    assert_eq!(BAND_BOTTOM, y + GENESIS_LABEL.3);
 }
 
 #[test]
@@ -555,4 +579,72 @@ fn no_other_model_has_a_rolled_face() {
             assert_eq!(v.xyz[2], 0.0, "{model:?} has a face that is not flat");
         }
     }
+}
+
+// ---- a scan of a real label is the whole of it, and nothing of ours goes over it
+
+fn write_scan(dir: &std::path::Path, w: u32, h: u32, rgb: [u8; 3]) -> PathBuf {
+    let path = dir.join("scan.png");
+    let mut data = Vec::with_capacity((w * h * 3) as usize);
+    for _ in 0..w * h {
+        data.extend_from_slice(&rgb);
+    }
+    let f = std::fs::File::create(&path).unwrap();
+    let mut enc = png::Encoder::new(std::io::BufWriter::new(f), w, h);
+    enc.set_color(png::ColorType::Rgb);
+    enc.set_depth(png::BitDepth::Eight);
+    enc.write_header().unwrap().write_image_data(&data).unwrap();
+    path
+}
+
+fn pixel(f: &omega_ui::CartFace, x: u32, y: u32) -> [u8; 3] {
+    let i = ((y * f.w + x) * 4) as usize;
+    [f.rgba[i], f.rgba[i + 1], f.rgba[i + 2]]
+}
+
+#[test]
+fn a_label_scan_fills_the_whole_recess_with_nothing_printed_over_it() {
+    let d = tempfile::tempdir().unwrap();
+    // a scan of a real label comes about 1.29 wide for each tall, so is cropped a little to fit
+    let want = [200, 40, 40];
+    let scan = write_scan(d.path(), 238, 190, want);
+    for p in BOTH {
+        let mut c = cart(p, "Aladdin");
+        c.label = Some(scan.clone());
+        let f = cart_face(&c);
+        let (x, y, w, h) = GENESIS_LABEL;
+        for py in y..y + h {
+            for px in x..x + w {
+                assert_eq!(
+                    pixel(&f, px, py),
+                    want,
+                    "{p:?}: the label is not all there at {px},{py}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_label_scan_makes_a_genesis_and_a_mega_drive_cart_the_same() {
+    // the console's name is on the scan, in the logo, so the faces are one
+    let d = tempfile::tempdir().unwrap();
+    let scan = write_scan(d.path(), 238, 190, [30, 90, 200]);
+    let (mut g, mut m) = (
+        cart(Platform::Genesis, "Aladdin"),
+        cart(Platform::MegaDrive, "Aladdin"),
+    );
+    g.label = Some(scan.clone());
+    m.label = Some(scan);
+    assert_eq!(cart_face(&g).rgba, cart_face(&m).rgba);
+}
+
+#[test]
+fn a_generated_label_has_a_dark_panel_with_a_grid_for_the_name_to_stand_on() {
+    let f = cart_face(&cart(Platform::Genesis, "Sonic"));
+    let (x, _, _, _) = GENESIS_LABEL;
+    // between the lines of the grid the panel, on them the line, well clear of the name
+    assert_eq!(pixel(&f, x + 2, BAND_TOP + 1), BAND_PANEL);
+    assert_eq!(pixel(&f, x + 5, BAND_TOP + 1), BAND_LINE);
+    assert_eq!(pixel(&f, x + 2, BAND_TOP + 4), BAND_LINE);
 }

@@ -284,42 +284,71 @@ fn face_of(cart: &Cart, scans: bool) -> CartFace {
     let scan = cart.label.as_deref().filter(|_| scans);
     let label = match scan.and_then(|p| label_art(p, lw, lh)) {
         Some(rgba) => rgba,
+        None if model == CartModel::Genesis => {
+            genesis_label(&s, &label_text(cart), genesis::console_name(cart.platform))
+        }
         None => generated_label(&s, &label_text(cart)),
     };
     mould_detail(&s, &mut face);
     recess_label(&s, &mut face, &shell);
     paste_label(&s, &mut face, &label);
-    if model == CartModel::Genesis {
-        print_console_name(&s, &mut face, genesis::console_name(cart.platform));
-    }
     clip_to_silhouette(&s, &mut face);
     face
 }
 
-/// `name` on the grid band under a Genesis or Mega Drive label, in the silver of the console's
-/// logo, so a Genesis cart and a Mega Drive cart can be told apart.
-fn print_console_name(s: &Spec, face: &mut CartFace, name: &str) {
-    if name.is_empty() {
-        return;
+/// The generated label of a Genesis or Mega Drive cart, the whole of a real one: coloured art with
+/// the title on it, and under it the dark grid band with the console's name in the silver of its
+/// logo, so a Genesis cart and a Mega Drive cart can be told apart. A label scan has its own band,
+/// logo and all, and is drawn as it is, with nothing printed over it.
+fn genesis_label(s: &Spec, title: &str, name: &str) -> Vec<u8> {
+    let (_, _, lw, lh) = s.label;
+    let art_h = genesis::ART_H;
+    let bg = label_colour(title);
+    let mut rgba = Vec::with_capacity((lw * lh * 4) as usize);
+    for _ in 0..lw * art_h {
+        rgba.extend_from_slice(&[bg[0], bg[1], bg[2], 255]);
     }
-    let Some(font) = text::label_font() else {
-        return;
-    };
-    let (top, bottom) = (genesis::BAND_TOP, genesis::BAND_BOTTOM);
-    let (w, h) = (s.w, bottom - top);
-    let (from, to) = ((top * w * 4) as usize, (bottom * w * 4) as usize);
-    let layout = text::fit_box(
-        font,
-        name,
-        (s.label.2 - 2 * genesis::BAND_PAD) as f32,
-        (h - 2 * genesis::BAND_PAD) as f32,
-        1,
-        genesis::NAME_PX,
-        MIN_PX,
-    );
-    let mut band = face.rgba[from..to].to_vec();
-    text::draw_centred(&mut band, w, h, &layout, genesis::NAME_INK);
-    face.rgba[from..to].copy_from_slice(&band);
+    let font = text::label_font();
+    if let Some(font) = font {
+        let layout = text::fit_box(
+            font,
+            title,
+            (lw - 2 * PAD) as f32,
+            s.max_h,
+            MAX_LINES,
+            MAX_PX,
+            MIN_PX,
+        );
+        text::draw_centred(&mut rgba, lw, art_h, &layout, ink(bg));
+    }
+    let band_h = lh - art_h;
+    let (gx, gy) = genesis::GRID;
+    let mut band = Vec::with_capacity((lw * band_h * 4) as usize);
+    for y in 0..band_h {
+        for x in 0..lw {
+            let line = x % gx == gx / 2 || y % gy == gy / 2;
+            let c = if line {
+                genesis::BAND_LINE
+            } else {
+                genesis::BAND_PANEL
+            };
+            band.extend_from_slice(&[c[0], c[1], c[2], 255]);
+        }
+    }
+    if let (Some(font), false) = (font, name.is_empty()) {
+        let layout = text::fit_box(
+            font,
+            name,
+            (lw - 2 * genesis::BAND_PAD) as f32,
+            (band_h - 2 * genesis::BAND_PAD) as f32,
+            1,
+            genesis::NAME_PX,
+            MIN_PX,
+        );
+        text::draw_centred(&mut band, lw, band_h, &layout, genesis::NAME_INK);
+    }
+    rgba.extend_from_slice(&band);
+    rgba
 }
 
 fn clip_to_silhouette(s: &Spec, face: &mut CartFace) {

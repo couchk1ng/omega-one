@@ -82,8 +82,9 @@ pub use models::disc::{
     MAX_STACK, STACK_DIVE,
 };
 pub use models::genesis::{
-    console_name, roll_z as genesis_roll_z, silhouette as genesis_silhouette, BAND_BOTTOM,
-    BAND_TOP, H as GENESIS_H, LABEL as GENESIS_LABEL, ROLL_MM as GENESIS_ROLL_MM, W as GENESIS_W,
+    console_name, roll_z as genesis_roll_z, silhouette as genesis_silhouette,
+    ART_H as GENESIS_ART_H, BAND_BOTTOM, BAND_LINE, BAND_PANEL, BAND_TOP, H as GENESIS_H,
+    LABEL as GENESIS_LABEL, ROLL_MM as GENESIS_ROLL_MM, W as GENESIS_W,
 };
 pub use models::snes::{silhouette as snes_silhouette, SnesShell};
 pub use motion::ease;

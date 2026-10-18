@@ -3,9 +3,9 @@
 //! Drawn 4 units to the millimetre from a retail Mega Drive cart photographed square on, and
 //! checked against its width of 108.5 mm and its label of 80.5 mm. From the front it is a plain
 //! rounded rectangle about 1.47 times as wide as it is tall, 434 by 296 units: a raised pillar
-//! down each side that rolls off round the end, a label well between them 74% of the width that
-//! runs up to the top edge, and under it a grid band for the console's name. The corners are
-//! about 5 mm round.
+//! down each side that rolls off round the end, and between them a recess 74% of the width that
+//! runs up to the top edge and holds the whole of the label: the art, and under it the grid band
+//! with the console's logo. The corners are about 5 mm round.
 //!
 //! Behind the main shell, which is about 12.7 mm deep, is a narrower foot, 97 mm across, that
 //! goes into the console, making the whole cart about 17 mm thick. The ends of the shell roll
@@ -43,16 +43,23 @@ const RADIUS: f32 = 20.0;
 pub const W: u32 = 300;
 pub const H: u32 = 204;
 
-/// The label in the face's pixels: 80.5 mm by 53, from the pillar to the pillar and up to just
-/// under the top edge, 1.8 mm, which leaves room for the bevel round its well.
-pub const LABEL: (u32, u32, u32, u32) = (39, 5, 222, 145);
+/// The label window in the face's pixels: the whole recess between the pillars, 80.5 mm across,
+/// which a real label fills with the art on top and under it the grid band with the console's
+/// logo, its part number and the copyright line. A scan of one comes about 1.29 times as wide as
+/// it is tall, the recess itself measures about 1.2, and a scan is scaled to cover the window
+/// and cropped to it, so the window sits between the two.
+pub const LABEL: (u32, u32, u32, u32) = (39, 5, 222, 174);
+
+/// How tall the art is on a generated label, the rest being the grid band under it: about 79%,
+/// as on a scan of a real label.
+pub const ART_H: u32 = 138;
 
 /// How far in from the outline a clear shell's plastic lightens at its rim, in pixels.
 const RIM: u32 = 6;
 
-/// The grid band under the label, in the face's rows, where the console's name is printed.
-pub const BAND_TOP: u32 = LABEL.1 + LABEL.3;
-pub const BAND_BOTTOM: u32 = 185;
+/// The grid band of a generated label, in the face's rows, where the console's name is printed.
+pub const BAND_TOP: u32 = LABEL.1 + ART_H;
+pub const BAND_BOTTOM: u32 = LABEL.1 + LABEL.3;
 
 /// How far in from the band's edges the name keeps, in pixels, and the biggest it is printed.
 pub const BAND_PAD: u32 = 5;
@@ -60,6 +67,12 @@ pub const NAME_PX: f32 = 18.0;
 
 /// The silver the name is printed in, as the chrome of the console's logo is.
 pub const NAME_INK: [u8; 3] = [0xc9, 0xcd, 0xd8];
+
+/// The band's dark panel and the lines of its grid, which come every `GRID` pixels across and
+/// down, as a real cart's do.
+pub const BAND_PANEL: [u8; 3] = [0x16, 0x16, 0x1b];
+pub const BAND_LINE: [u8; 3] = [0x2a, 0x2a, 0x32];
+pub const GRID: (u32, u32) = (10, 8);
 
 /// The console's name as a real cart of that console carries it on its band.
 pub fn console_name(platform: omega_store::Platform) -> &'static str {
@@ -128,7 +141,7 @@ pub(crate) fn spec() -> Spec {
         mask: mask(),
         depth: depth(),
         detail: detail(),
-        max_h: (LABEL.3 - 2 * PAD) as f32,
+        max_h: (ART_H - 2 * PAD) as f32,
         rim: RIM,
         board: Board {
             x: (0.1, 0.9),
