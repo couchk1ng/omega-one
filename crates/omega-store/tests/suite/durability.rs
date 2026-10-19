@@ -204,6 +204,7 @@ fn a_card_from_before_the_settings_keeps_all_its_values() {
             backdrop_moving: true,
             backdrop_colour: 0,
             font: Font::Bold,
+            titles: false,
         }
     );
 }
@@ -588,4 +589,49 @@ fn a_font_the_reader_does_not_know_or_never_saw_is_bold() {
         );
     }
     assert_eq!(AppState::default().font, Font::Bold);
+}
+
+#[test]
+fn titles_round_trip_as_on_or_off_and_are_off_until_asked_for() {
+    assert!(
+        !AppState::default().titles,
+        "titles are on before anyone asked"
+    );
+    for titles in [true, false] {
+        let d = tmp_root();
+        let s = AppState {
+            clock_set: true,
+            titles,
+            ..AppState::default()
+        };
+        write_app_state(d.path(), &s).unwrap();
+        assert_eq!(
+            read_app_state(d.path()),
+            s,
+            "titles {titles} did not come back"
+        );
+        let text = std::fs::read_to_string(d.path().join("Config/omega-zero.state")).unwrap();
+        let want = format!("titles={}", if titles { "on" } else { "off" });
+        assert!(text.lines().any(|l| l == want), "no {want} in {text:?}");
+    }
+}
+
+#[test]
+fn a_card_that_never_saw_titles_or_holds_an_odd_value_has_them_off() {
+    let d = tmp_root();
+    let known =
+        "cart=\nbrightness=3\nblue_light=1\nvolume=40\nmuted=0\nclock_set=1\nutc_offset_min=0\n";
+    for line in ["", "titles=\n", "titles=maybe\n", "titles=ON\n"] {
+        std::fs::write(
+            d.path().join("Config/omega-zero.state"),
+            format!("{known}{line}"),
+        )
+        .unwrap();
+        let s = read_app_state(d.path());
+        assert!(!s.titles, "read {line:?} as titles on");
+        assert_eq!(
+            s.brightness, 3,
+            "{line:?} took the rest of the card with it"
+        );
+    }
 }

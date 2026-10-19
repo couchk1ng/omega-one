@@ -19,6 +19,9 @@ pub(crate) struct Clocks {
     /// What the pill shows and the palette colour it was baked in, and its texture.
     platform: (String, u8),
     platform_tex: Option<TexId>,
+    /// The title caption's text and the palette colour it was baked in, and its texture.
+    title: (String, u8),
+    title_tex: Option<TexId>,
     /// The refused cart's alert, baked again when the palette changes.
     alert: Baked<u8>,
 }
@@ -52,4 +55,25 @@ pub(crate) fn sync_clock(app: &mut App, compositor: &mut Compositor, clocks: &mu
         }
         clocks.platform = named;
     }
+    // the selected game's name in a pill above it, while Y has the titles on
+    let title = (app.title_text().unwrap_or_default(), colour);
+    if title != clocks.title {
+        if title.0.is_empty() {
+            app.clear_shelf_title();
+        } else {
+            // across the screen with a margin either side, and the pill's ends
+            let room =
+                (omega_gfx::out_w() / omega_ui::SPRITE_PX).saturating_sub(2 * TITLE_MARGIN + 7);
+            let face = pill_face(
+                &omega_ui::kit::pixel::fit_text(&title.0, room),
+                app.palette(),
+            );
+            let id = upload_nearest(compositor, &mut clocks.title_tex, &face);
+            app.set_shelf_title_face(id, face.w);
+        }
+        clocks.title = title;
+    }
 }
+
+/// How far in from the edge of the screen, in art pixels, the widest title caption stops.
+const TITLE_MARGIN: u32 = 14;

@@ -43,6 +43,7 @@ impl ControlsView {
         if Core::for_platform(platform).len() > 1 {
             shelf.push(("X", "CORE"));
         }
+        shelf.push(("Y", "TITLE"));
         shelf.extend([
             ("START", "SETTINGS"),
             ("SELECT", "CONTROLS"),

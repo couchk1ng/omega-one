@@ -190,6 +190,19 @@ pub fn text_width(text: &str) -> u32 {
         .round() as u32
 }
 
+/// `text` as it is if it is no wider than `room` art pixels, otherwise as many of its letters as fit
+/// with "..." after them, so a long name never runs off the screen.
+pub fn fit_text(text: &str, room: u32) -> String {
+    if text_width(text) <= room {
+        return text.to_string();
+    }
+    let mut kept: String = text.to_string();
+    while !kept.is_empty() && text_width(&format!("{}...", kept.trim_end())) > room {
+        kept.pop();
+    }
+    format!("{}...", kept.trim_end())
+}
+
 /// A face `w` by `h`, clear.
 pub fn blank(w: u32, h: u32) -> UndoFace {
     UndoFace {

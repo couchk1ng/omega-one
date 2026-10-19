@@ -41,6 +41,7 @@ mod shelf;
 mod shell;
 mod spin;
 mod switcher;
+mod title_fit;
 mod toast;
 mod top_bar;
 

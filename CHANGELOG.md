@@ -333,3 +333,8 @@ The first release, for the RG35XX SP and the other H700 handhelds BaseOS runs on
 - The boot logo is the OMEGA ZERO title in pixel art, edged in white, over the shelf's grid.
   Its source is `assets/logo/omega-zero-logo.html`; `task bootlogos` renders it for every
   panel, and `STYLE=smooth` renders the drawn-straight version instead.
+- Y on the shelf shows the selected game's name in a pill above its cart or disc, and Y again takes
+  it away; the card remembers which. The name is the ROM's file name with the tags in brackets taken
+  off, and "Legend of Zelda, The" put back as "The Legend of Zelda"; one too long for the screen is
+  cut and ends in dots. It follows the selection as the shelf is browsed, fades in as it is turned
+  on, and is listed in CONTROLS. It is not shown over the core picker or while a cart goes in.

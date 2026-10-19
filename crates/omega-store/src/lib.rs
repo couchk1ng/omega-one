@@ -15,6 +15,7 @@ mod region;
 mod ring;
 mod scan;
 pub mod snes;
+pub mod title;
 mod stamp;
 mod theme;
 
@@ -39,3 +40,4 @@ pub use stamp::{
     civil_from_days, days_from_civil, days_in_month, format_stamp, parse_stamp, stamp_now,
 };
 pub use theme::{Theme, THEME_FILE};
+pub use title::display_title;

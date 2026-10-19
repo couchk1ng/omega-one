@@ -49,6 +49,8 @@ pub struct AppState {
     pub backdrop_colour: u8,
     /// The font the bar's actions write their big words in.
     pub font: Font,
+    /// The shelf shows the selected game's name above it: Y turns it on and off.
+    pub titles: bool,
 }
 
 impl Default for AppState {
@@ -75,6 +77,7 @@ impl Default for AppState {
             backdrop_moving: true,
             backdrop_colour: 0,
             font: Font::Bold,
+            titles: false,
         }
     }
 }
@@ -93,7 +96,7 @@ pub fn read_app_state(root: &Path) -> AppState {
 
 pub fn write_app_state(root: &Path, s: &AppState) -> std::io::Result<()> {
     let text = format!(
-        "cart={}\ncart_platform={}\nbrightness={}\nblue_light={}\nvolume={}\nvolume_hp={}\nmuted={}\nmuted_hp={}\nclock_set={}\nutc_offset_min={}\nrumble={}\nff_speed={}\nff_sound={}\ncolour_correction={}\nwifi={}\nssh={}\nbluetooth={}\nbackdrop={}\nbackdrop_moving={}\nbackdrop_colour={}\nfont={}\n",
+        "cart={}\ncart_platform={}\nbrightness={}\nblue_light={}\nvolume={}\nvolume_hp={}\nmuted={}\nmuted_hp={}\nclock_set={}\nutc_offset_min={}\nrumble={}\nff_speed={}\nff_sound={}\ncolour_correction={}\nwifi={}\nssh={}\nbluetooth={}\nbackdrop={}\nbackdrop_moving={}\nbackdrop_colour={}\nfont={}\ntitles={}\n",
         s.cart.as_deref().unwrap_or(""),
         s.cart_platform.map_or(String::new(), platform_key),
         s.brightness,
@@ -114,7 +117,8 @@ pub fn write_app_state(root: &Path, s: &AppState) -> std::io::Result<()> {
         s.backdrop.map_or("", BackdropStyle::key),
         s.backdrop_moving as u8,
         BACKDROP_COLOURS[(s.backdrop_colour as usize).min(BACKDROP_COLOURS.len() - 1)],
-        s.font.key()
+        s.font.key(),
+        if s.titles { "on" } else { "off" }
     );
     atomic_write(&state_path(root), text.as_bytes())
 }
@@ -141,6 +145,7 @@ fn parse(text: &str) -> Option<AppState> {
     let mut backdrop_moving = None;
     let mut backdrop_colour = None;
     let mut font = None;
+    let mut titles = None;
     for line in text.lines().filter(|l| !l.is_empty()) {
         let Some((key, value)) = line.split_once('=') else {
             continue;
@@ -167,6 +172,7 @@ fn parse(text: &str) -> Option<AppState> {
             "backdrop_moving" => backdrop_moving = flag(value),
             "backdrop_colour" => backdrop_colour = colour_index(value),
             "font" => font = Font::from_key(value),
+            "titles" => titles = on_off(value),
             _ => {}
         }
     }
@@ -194,6 +200,7 @@ fn parse(text: &str) -> Option<AppState> {
         backdrop_moving: backdrop_moving.unwrap_or(fallback.backdrop_moving),
         backdrop_colour: backdrop_colour.unwrap_or(fallback.backdrop_colour),
         font: font.unwrap_or(fallback.font),
+        titles: titles.unwrap_or(fallback.titles),
     })
 }
 

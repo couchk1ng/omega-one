@@ -86,6 +86,9 @@ const SHUTDOWN_SHOW_MS: Millis = SLIDE_MS + 120;
 
 /// How long the shelf's pill takes to rise into place with a new system or letter.
 const PILL_IN_MS: Millis = 220;
+
+/// How long the shelf's title caption takes to come in when Y turns it on.
+const TITLE_IN_MS: Millis = 160;
 /// How long a letter jumped to stays in the pill before the system comes back.
 const LETTER_SHOWN_MS: Millis = 2200;
 /// The core picker's lid, the cart's own face, turned `turn` as it lifts and spun `yaw` as it
@@ -339,6 +342,10 @@ pub struct App {
     /// The top bar's clock, figure and bolt, baked in its ink.
     pub(crate) top_readouts: Readouts,
     pub(crate) shelf_platform: omega_ui::Printed,
+    /// The selected game's name in a pill, baked by the front end while titles are on.
+    pub(crate) shelf_title: omega_ui::Printed,
+    /// When Y last turned the titles on, for the caption to fade in from.
+    pub(crate) title_at: Option<Millis>,
     pub(crate) name_pending: bool,
     /// A game's start took omega-zero down last time: the boot leaves it on the shelf, or the
     /// seated cart where that game is not there, rather than resume either.
@@ -499,6 +506,8 @@ impl App {
             wallpaper: None,
             top_readouts: Readouts::default(),
             shelf_platform: omega_ui::Printed::default(),
+            shelf_title: omega_ui::Printed::default(),
+            title_at: None,
             name_pending: false,
             hold_resume: false,
             pill_letter: None,
@@ -722,6 +731,44 @@ impl App {
 
     pub fn clear_shelf_platform(&mut self) {
         self.shelf_platform = omega_ui::Printed::default();
+    }
+
+    /// The shelf shows the selected game's name above it. Y turns it on and off, and the card
+    /// remembers which.
+    pub fn titles_on(&self) -> bool {
+        self.state.titles
+    }
+
+    /// Y on the shelf: shows the selected game's name above it, or takes it away.
+    pub(crate) fn toggle_titles(&mut self) {
+        self.state.titles = !self.state.titles;
+        self.title_at = self.state.titles.then(|| self.now());
+        self.persist();
+    }
+
+    /// The name the shelf shows above the selected game while titles are on: its file name without
+    /// the tags a set of ROMs puts after it.
+    pub fn title_text(&self) -> Option<String> {
+        if !self.state.titles {
+            return None;
+        }
+        self.selected_stem().map(omega_store::display_title)
+    }
+
+    pub fn set_shelf_title_face(&mut self, face: TexId, w: u32) {
+        self.shelf_title = omega_ui::Printed::new(face, w);
+    }
+
+    pub fn clear_shelf_title(&mut self) {
+        self.shelf_title = omega_ui::Printed::default();
+    }
+
+    /// How much of the caption shows: it fades in as Y turns the titles on, and is whole after.
+    pub(crate) fn title_alpha(&self) -> f32 {
+        match self.title_at {
+            Some(at) => ease((self.now().saturating_sub(at) as f32 / TITLE_IN_MS as f32).min(1.0)),
+            None => 1.0,
+        }
     }
 
     /// What the shelf's pill shows: the letter jumped to, or the shelf's system.
@@ -1211,6 +1258,7 @@ impl App {
         match self.phase {
             Phase::Shelf => match action {
                 Action::GbaDown(Btn::X) if self.core_picker.is_none() => self.open_core_picker(),
+                Action::GbaDown(Btn::Y) if self.core_picker.is_none() => self.toggle_titles(),
                 _ if self.core_picker.is_some() => self.core_picker_input(action),
                 // START is the settings button on the shelf; MENU opens nothing here
                 Action::GbaDown(Btn::Start) => self.open_settings(),

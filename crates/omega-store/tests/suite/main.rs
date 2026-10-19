@@ -22,6 +22,7 @@ mod scan;
 mod snes;
 mod stamp;
 mod theme;
+mod title;
 mod volume;
 
 /// A file in this folder that the list above leaves out is never compiled, let alone run.
