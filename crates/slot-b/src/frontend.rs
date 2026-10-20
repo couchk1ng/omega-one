@@ -59,7 +59,7 @@ use sync_keyboard::{sync_keyboard, KeyboardTexes};
 use sync_labels::sync_labels;
 use sync_link::{sync_link, LinkTexes};
 use sync_network::{sync_network, NetworkTexes};
-use sync_opening::{sync_opening, TerminalRows};
+use sync_opening::{sync_opening, OpeningTextures, TerminalRows};
 use sync_power::{sync_power, PowerPanels};
 use sync_settings::{sync_settings, SettingsTexes};
 use sync_start_notice::sync_start_notice;
@@ -118,8 +118,8 @@ pub struct Frontend {
     hud: HudTexes,
     /// The boot logo's texture while it fades over the shelf.
     boot_logo: Option<TexId>,
-    /// The opening's lines while it plays.
-    opening: TerminalRows,
+    /// The boot sequence's art while it plays.
+    opening: OpeningTextures,
     /// The start notice's lines while it is shown.
     start_notice: TerminalRows,
     /// The system and size of the last game picture uploaded, which a SNES or PlayStation
@@ -203,7 +203,7 @@ impl Frontend {
             bar: BarTexes::default(),
             hud: HudTexes::default(),
             boot_logo: None,
-            opening: TerminalRows::default(),
+            opening: OpeningTextures::default(),
             start_notice: TerminalRows::default(),
             picture: None,
         }

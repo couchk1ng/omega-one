@@ -1,6 +1,6 @@
 //! The boot images as an old PC's BIOS screen, after Award's, told about slot-b: the
-//! still screen the bootloader shows while Linux starts, in the opening's letters and where its
-//! terminal prints, so it runs on into the opening. The Slot B logo stands where Award put
+//! still screen the bootloader shows while Linux starts, in the letters the start notice prints
+//! in and where its terminal stands. The Slot B logo stands where Award put
 //! its Energy Star.
 //!
 //! `bootscreens OUT_DIR` writes OUT_DIR/bootlogo-<w>x<h>.bmp for each panel slot-b runs on,

@@ -3,6 +3,7 @@ mod backdrop;
 mod battery;
 mod bezel;
 mod board;
+mod boot_art;
 mod cart;
 mod chrome;
 mod clock;
@@ -51,6 +52,7 @@ pub use board::{
     LID_SHADOW_W, LID_TURN, ROM_H, ROM_W, ROM_X, ROM_Y, SHADOW_AT, SHADOW_H, SHADOW_W, SLIDE_SHARE,
     SLIDE_UP, SNES_SOCKETS, SOCKET_H, SOCKET_U, SOCKET_V, SOCKET_W, TURN_PAD,
 };
+pub use boot_art::{boot_art, inset as boot_inset, ArtFace, BootArt};
 pub use cart::{
     cart_box, cart_face, cart_shadow, clean_label, face_labels, gb_cart_shadow, gb_label_panel,
     gb_shell_of, generated_face, label_colour, label_panel, label_tags, label_text, model_box,
@@ -90,6 +92,14 @@ pub use models::snes::{silhouette as snes_silhouette, SnesShell};
 pub use motion::ease;
 pub use opening::{opening_line, OPENING_ADVANCE, OPENING_PITCH, OPENING_RISE};
 pub use plate::{word_cap_top, UndoFace, HINT_H};
+
+/// The boot sequence's geometry, in logical pixels: see `boot_art`.
+pub mod boot {
+    pub use crate::boot_art::{
+        FRAME_H, FRAME_W, GAP, GLINT, GLYPH, LEFT, LETTERS, ND, NY0, NY1, PC, PH, PIECE, PW, PX,
+        PY, SEAM, SHADOW, WX, WY, XSL,
+    };
+}
 pub use polaroids::{photo_face, PhotoFace, Polaroids, PHOTO_H, PHOTO_W};
 pub use power_menu::PowerChoice;
 pub use refusal::Refusal;

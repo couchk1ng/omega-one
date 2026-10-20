@@ -1,6 +1,6 @@
 #![cfg(target_os = "macos")]
-//! The start notice as the frontend draws it: the opening's mint on black, where the opening's
-//! terminal stands and in the very letters the opening drew, with no shelf between the two, and
+//! The start notice as the frontend draws it: the start notice's terminal in mint on black, with
+//! no shelf between the opening and it, and
 //! the shelf once a press puts it away.
 
 use crate::common;
@@ -111,14 +111,9 @@ fn the_notice_is_the_openings_terminal_and_then_the_shelf() {
     let mut input = Presses::default();
     let all = (out_w() * out_h()) as usize;
     let mut n = 1;
-    let mut opening = Vec::new();
-    // the opening with all its lines up, then its fade out and the notice in, with no shelf
+    // the opening, then the notice in on the black it leaves, with no shelf
     let notice = loop {
         let lit = frame(&mut f, &mut c, &mut input, n);
-        if n == 600 {
-            assert_eq!(f.app().opening_levels(), Some((1.0, 1.0)));
-            opening = lit.clone();
-        }
         if n > 600 {
             let black = lit.chunks_exact(4).filter(|p| p[..3] == [0, 0, 0]).count();
             assert!(black > all * 3 / 4, "frame {n}: the shelf showed through");
@@ -132,22 +127,16 @@ fn the_notice_is_the_openings_terminal_and_then_the_shelf() {
     assert!(!f.app().opening_shown());
     assert_eq!(f.app().start_notice_levels(), Some((1.0, 1.0)));
     let (x, y) = origin();
-    // the O of SLOTB, as the opening draws it: mint at the capitals' top, pale lower down
+    // the header's letters, as the start notice draws them: mint at the capitals' top, pale
+    // lower down, whatever the letter
+    let header = band(&notice, 0..2);
     assert!(
-        near(rgb(&notice, x + 1, y + 2), [161, 228, 208]),
-        "{:?}",
-        rgb(&notice, x + 1, y + 2)
+        header.iter().any(|p| near(*p, [161, 228, 208])),
+        "no mint in the header"
     );
     assert!(
-        near(rgb(&notice, x + 1, y + 6), [214, 238, 232]),
-        "{:?}",
-        rgb(&notice, x + 1, y + 6)
-    );
-    assert_eq!(rgb(&notice, x + 6, y + 6), [0, 0, 0], "the O is not hollow");
-    assert_eq!(
-        band(&notice, 0..2),
-        band(&opening, 0..2),
-        "the header is not the opening's, letter for letter"
+        header.iter().any(|p| near(*p, [214, 238, 232])),
+        "no pale in the header"
     );
     assert!(inked(&band(&notice, 3..4)) > 0, "no warning");
     assert_eq!(inked(&band(&notice, 2..3)), 0, "the blank line is inked");

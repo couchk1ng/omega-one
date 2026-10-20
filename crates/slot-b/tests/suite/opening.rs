@@ -1,14 +1,15 @@
-//! The opening: Mega Man X5's boot screen told about this handheld, played over the shelf by a
-//! boot that lands on it. The logo fades to black, the terminal fades in, types for ten
-//! seconds, fades out, and the shelf fades in. A press cuts it short and goes no further.
+//! The opening: the boot sequence, played over the shelf by a boot that lands on it. The logo
+//! fades to black, the grid, the plate and the B's click play for three seconds, the whole
+//! thing fades out, and the shelf fades in. A press cuts it short and goes no further.
 
 use crate::common;
 
 use common::{app_booting_at, tmp_root_with_carts, CLOCK_IS_SET};
 use slot_b::app::{App, Phase};
 use slot_b::audio::Sfx;
+use slot_b::boot_seq::{SEAT, SLIDE, STAMP};
 use slot_b::opening::{
-    Facts, CUT_OUT_MS, CUT_REVEAL_MS, IN_MS, LEAD_MS, OUT_MS, REVEAL_MS, SCRIPT_MS,
+    Facts, OpeningArt, CUT_OUT_MS, CUT_REVEAL_MS, LEAD_MS, OUT_MS, REVEAL_MS, SCRIPT_MS,
 };
 use slot_b_gfx::{out_h, out_w};
 use slot_b_input::{Action, Btn};
@@ -58,13 +59,6 @@ fn run_to(a: &mut App, ms: f32) -> Vec<Sfx> {
     run_for(a, ms + FRAME_MS)
 }
 
-fn line(a: &App, row: usize) -> Option<String> {
-    a.opening_lines()
-        .into_iter()
-        .find(|(r, _)| *r == row)
-        .map(|(_, t)| t)
-}
-
 #[test]
 fn the_facts_are_the_handhelds_own() {
     let release = parse_baseos_release("BASEOS_TARGET=rg35xxsp\nBASEOS_MODEL=\"RG35XX SP\"\n");
@@ -104,8 +98,54 @@ fn a_computer_standing_in_tells_the_rg35xx_sps_facts() {
     assert_eq!((f.mem_mb, f.battery_mah), (1024, Some(3300)));
 }
 
+/// The art, as the frontend would have uploaded it: a texture id for each piece.
+fn art() -> OpeningArt {
+    let tex = TexId::from_raw;
+    OpeningArt {
+        grid: tex(1),
+        left: tex(2),
+        letters: tex(3),
+        piece: tex(4),
+        seam: tex(5),
+        shadow: tex(6),
+        glyph: tex(7),
+        glint: tex(8),
+    }
+}
+
+/// What `a` draws, with the art handed to it.
+fn drawn(a: &mut App) -> Vec<Draw> {
+    a.set_opening_art(art());
+    let mut out = Vec::new();
+    a.draw(&mut out);
+    out
+}
+
+/// The texture of each of the sequence's art pieces in `out`, in the order they are drawn.
+fn textures(out: &[Draw]) -> Vec<u32> {
+    let known = art();
+    out.iter()
+        .filter_map(|d| match d {
+            Draw::Spun { tex, .. } => [
+                known.grid,
+                known.left,
+                known.letters,
+                known.piece,
+                known.seam,
+                known.shadow,
+                known.glyph,
+                known.glint,
+            ]
+            .iter()
+            .position(|t| t == tex)
+            .map(|i| i as u32 + 1),
+            _ => None,
+        })
+        .collect()
+}
+
 #[test]
-fn the_logo_fades_to_black_before_the_terminal_comes_in() {
+fn the_logo_fades_to_black_before_the_sequence_starts() {
     let (_d, mut a) = opened();
     a.update(FRAME);
     assert_eq!(
@@ -113,122 +153,43 @@ fn the_logo_fades_to_black_before_the_terminal_comes_in() {
         Some((1.0, 0.0)),
         "the first frame is black"
     );
-    assert!(a.opening_lines().is_empty());
     run_for(&mut a, LEAD_MS - 20.0);
     assert_eq!(
         a.opening_levels(),
         Some((1.0, 0.0)),
         "the logo's fade is over black"
     );
-    run_for(&mut a, 20.0 + IN_MS / 2.0);
-    let (veil, ink) = a.opening_levels().unwrap();
-    assert_eq!(veil, 1.0);
-    assert!(ink > 0.2 && ink < 1.0, "the terminal fades in: {ink}");
-}
-
-#[test]
-fn the_terminal_tells_the_handheld_as_x5s_told_its_system() {
-    let (_d, mut a) = opened();
-    run_to(&mut a, LEAD_MS + 9_500.0);
-    assert_eq!(a.opening_levels(), Some((1.0, 1.0)));
-    let lines = a.opening_lines();
-    let rows: Vec<usize> = lines.iter().map(|(r, _)| *r).collect();
+    run_for(&mut a, 20.0 + 100.0);
     assert_eq!(
-        rows,
-        [0, 1, 3, 4, 5, 7, 8, 10, 11, 12, 14, 15, 17, 19, 20, 21],
-        "a blank line between X5's groups"
-    );
-    let text = |row| line(&a, row).unwrap();
-    assert_eq!(text(0), "SLOT B HANDHELD SYSTEM");
-    assert_eq!(text(1), "Model RG35XX SP");
-    assert_eq!(text(3), "Licensed under GPL-3.0");
-    assert_eq!(text(7), "real  mem = 1024 MB");
-    assert_eq!(text(8), "avail mem =  872 MB");
-    assert_eq!(text(10), "cpu     : H700 1.5GHz x4");
-    assert_eq!(text(11), "gpu     : Mali-G31 MP2");
-    assert!(text(12).starts_with("battery : 3300mAh"), "{}", text(12));
-    assert_eq!(text(14), "login: root");
-    assert_eq!(text(15), "code : ****");
-    assert_eq!(text(17), ">slotb -boot -a");
-    assert_eq!(text(19), "reading \"GBA.BIOS\"");
-    assert_eq!(text(20), "reading \"CARTS\"");
-    assert_eq!(text(21), "reading \"SLOTB\"");
-    assert!(
-        lines.iter().all(|(_, t)| t.chars().count() <= 32),
-        "wider than the screen"
+        a.opening_levels(),
+        Some((1.0, 1.0)),
+        "the sequence is lit from its first moment"
     );
 }
 
 #[test]
-fn the_battery_line_tells_the_charge_as_it_stands() {
+fn the_four_sounds_come_in_order_at_their_beats() {
     let (_d, mut a) = opened();
-    run_to(&mut a, LEAD_MS + 3_400.0);
-    let percent = a.battery().map(|b| b.percent).expect("no battery read");
-    assert_eq!(
-        line(&a, 12).unwrap(),
-        format!("battery : 3300mAh  {percent}%")
-    );
-}
-
-#[test]
-fn memory_counts_up_and_keys_come_one_at_a_time() {
-    let (_d, mut a) = opened();
-    run_to(&mut a, LEAD_MS + 900.0);
-    let early = line(&a, 7).expect("no count by 900 ms");
-    assert_ne!(early, "real  mem = 1024 MB", "the count did not run up");
-    assert!(early.starts_with("real  mem ="));
-    let mut typed = Vec::new();
-    for _ in 0..240 {
+    let mut heard = Vec::new();
+    for n in 0..(6_000.0 / FRAME_MS) as u32 {
         a.update(FRAME);
-        if let Some(t) = line(&a, 14) {
-            if typed.last() != Some(&t) {
-                typed.push(t);
-            }
-        }
+        let at = n as f32 * FRAME_MS - LEAD_MS;
+        heard.extend(a.take_sfx().map(|s| (s, at)));
     }
-    assert_eq!(
-        typed,
-        [
-            "login: ",
-            "login: r",
-            "login: ro",
-            "login: roo",
-            "login: root"
-        ]
-    );
-}
-
-#[test]
-fn the_last_file_is_read_with_time_to_stand_before_the_fade_out() {
-    let (_d, mut a) = opened();
-    let mut came = None;
-    let mut at = 0.0;
-    a.update(FRAME);
-    while came.is_none() && at < SCRIPT_MS + LEAD_MS {
-        a.update(FRAME);
-        at += FRAME_MS;
-        if line(&a, 21).is_some() {
-            came = Some(at - LEAD_MS);
-        }
+    let want = [
+        (Sfx::BootRise, 250.0),
+        (Sfx::BootStamp, STAMP[0]),
+        (Sfx::BootSlide, SLIDE[0]),
+        (Sfx::BootSeat, SEAT),
+    ];
+    assert_eq!(heard.len(), 4, "{heard:?}");
+    for ((sfx, at), (want_sfx, want_at)) in heard.iter().zip(want) {
+        assert_eq!(*sfx, want_sfx);
+        assert!(
+            (at - want_at).abs() <= FRAME_MS * 2.0,
+            "{sfx:?} sounded at {at}, not {want_at}"
+        );
     }
-    let came = came.expect("SLOTB was never read");
-    assert!(
-        (8_500.0..=SCRIPT_MS - 600.0).contains(&came),
-        "SLOTB is read {came:.0} ms in"
-    );
-}
-
-#[test]
-fn every_key_and_file_is_heard_in_turn() {
-    let (_d, mut a) = opened();
-    let heard = run_to(&mut a, LEAD_MS + SCRIPT_MS);
-    let keys = |n| vec![Sfx::Key; n];
-    let mut want = vec![Sfx::Blip];
-    want.extend(keys(4)); // root
-    want.extend(keys(4)); // ****
-    want.extend(keys(12)); // slotb -boot -a, its spaces silent
-    want.extend([Sfx::Reading, Sfx::Reading, Sfx::SlotB]);
-    assert_eq!(heard, want);
 }
 
 #[test]
@@ -236,16 +197,234 @@ fn it_fades_out_to_black_then_the_shelf_fades_in_and_it_is_over() {
     let (_d, mut a) = opened();
     run_to(&mut a, LEAD_MS + SCRIPT_MS + OUT_MS / 2.0);
     let (veil, ink) = a.opening_levels().unwrap();
-    assert_eq!(veil, 1.0, "the shelf shows before the terminal is gone");
-    assert!(ink > 0.0 && ink < 0.6, "the terminal fades out: {ink}");
+    assert_eq!(veil, 1.0, "the shelf shows before the sequence is gone");
+    assert!(ink > 0.0 && ink < 0.6, "the sequence fades out: {ink}");
     run_for(&mut a, OUT_MS / 2.0 + REVEAL_MS / 2.0);
     let (veil, ink) = a.opening_levels().unwrap();
     assert_eq!(ink, 0.0);
     assert!(veil > 0.0 && veil < 0.6, "the black lifts: {veil}");
-    assert!(a.opening_lines().is_empty());
     run_for(&mut a, REVEAL_MS / 2.0 + 50.0);
     assert!(!a.opening_shown(), "still playing after it has ended");
     assert!(matches!(a.phase(), Phase::Shelf));
+}
+
+#[test]
+fn a_press_cuts_it_short_and_goes_no_further() {
+    let (_d, mut a) = opened();
+    // before the B's piece slides in or clicks: a cut must keep both sounds from ever coming
+    run_to(&mut a, LEAD_MS + 1_500.0);
+    let before = a.selected_stem().map(str::to_string);
+    a.apply(Action::GbaDown(Btn::Right));
+    a.apply(Action::ShelfRight);
+    a.apply(Action::Insert);
+    a.apply(Action::GbaUp(Btn::Right));
+    assert!(matches!(a.phase(), Phase::Shelf), "{:?}", a.phase());
+    assert_eq!(a.selected_stem().map(str::to_string), before);
+    // the slide, due 150 ms after the cut, must not be heard
+    let heard = run_for(&mut a, CUT_OUT_MS + 20.0);
+    assert!(
+        heard.is_empty(),
+        "the sequence played on after the cut: {heard:?}"
+    );
+    assert_eq!(
+        a.opening_levels().map(|(_, ink)| ink),
+        Some(0.0),
+        "the sequence is still lit"
+    );
+    run_for(&mut a, CUT_REVEAL_MS + 40.0);
+    assert!(
+        !a.opening_shown(),
+        "the shelf is not in half a second after the press"
+    );
+    assert!(matches!(a.phase(), Phase::Shelf));
+    assert_eq!(a.selected_stem().map(str::to_string), before);
+}
+
+#[test]
+fn the_art_is_asked_for_once_the_opening_starts_and_not_after_it_has_it() {
+    let (_d, mut a) = booted_on_the_shelf();
+    assert!(!a.opening_wants_art(), "no opening, no art");
+    a.start_opening(&Facts::default());
+    assert!(a.opening_wants_art());
+    a.set_opening_art(art());
+    assert!(!a.opening_wants_art());
+}
+
+#[test]
+fn the_black_comes_first_and_nothing_else_is_drawn_until_the_sequence_starts() {
+    let (_d, mut a) = opened();
+    run_to(&mut a, 200.0);
+    let out = drawn(&mut a);
+    let (w, h) = (out_w() as f32, out_h() as f32);
+    assert_eq!(
+        out,
+        [Draw::Rect {
+            x: 0.0,
+            y: 0.0,
+            w,
+            h,
+            colour: [0.0, 0.0, 0.0, 1.0]
+        }],
+        "the logo's fade is over black"
+    );
+}
+
+#[test]
+fn the_finished_plate_is_six_pieces_of_art_over_the_black_and_nothing_under_it_is_drawn() {
+    let (_d, mut a) = opened();
+    run_to(&mut a, LEAD_MS + 2_800.0);
+    let out = drawn(&mut a);
+    let (w, h) = (out_w() as f32, out_h() as f32);
+    assert_eq!(
+        out[0],
+        Draw::Rect {
+            x: 0.0,
+            y: 0.0,
+            w,
+            h,
+            colour: [0.0, 0.0, 0.0, 1.0]
+        }
+    );
+    // the grid, SLOT's piece, SLOT, the B's shadow, the B's piece and the B: no seam, no
+    // trail, no flash and no glint by now
+    assert_eq!(textures(&out), [1, 2, 3, 6, 4, 7], "{out:?}");
+    assert_eq!(out.len(), 7);
+    let Draw::Spun {
+        x,
+        y,
+        w: tw,
+        h: th,
+        colour,
+        turn,
+        yaw,
+        clip,
+        ..
+    } = out[2]
+    else {
+        panic!("SLOT's piece is not a spun draw: {:?}", out[2]);
+    };
+    let (ox, oy) = ((out_w() as i32 - 640) / 2, (out_h() as i32 - 480) / 2);
+    assert_eq!(
+        (x, y),
+        (
+            (ox + 2 * slot_b_ui::boot::LEFT[0]) as f32,
+            (oy + 2 * slot_b_ui::boot::LEFT[1]) as f32
+        )
+    );
+    assert_eq!(
+        (tw, th),
+        (
+            2.0 * slot_b_ui::boot::LEFT[2] as f32,
+            2.0 * slot_b_ui::boot::LEFT[3] as f32
+        )
+    );
+    assert_eq!(
+        (colour, turn, yaw, clip),
+        ([1.0, 1.0, 1.0, 1.0], 0.0, 0.0, None),
+        "plain, whole and full bright"
+    );
+}
+
+#[test]
+fn fading_out_dims_everything_by_the_same_amount() {
+    let (_d, mut a) = opened();
+    run_to(&mut a, LEAD_MS + SCRIPT_MS + OUT_MS / 2.0);
+    let (_, ink) = a.opening_levels().unwrap();
+    assert!(ink > 0.2 && ink < 0.8, "{ink}");
+    let out = drawn(&mut a);
+    let mut dimmed = 0;
+    for d in &out[1..] {
+        let (colour, is_grid) = match d {
+            Draw::Spun { colour, tex, .. } => (*colour, *tex == art().grid),
+            Draw::Rect { colour, .. } => (*colour, false),
+            other => panic!("something else is drawn: {other:?}"),
+        };
+        if is_grid {
+            // tinted bluish, then dimmed: no brighter than the dimming allows
+            assert!(colour[..3].iter().all(|c| *c <= ink), "{d:?}");
+        } else {
+            assert_eq!(&colour[..3], &[ink, ink, ink], "{d:?}");
+        }
+        dimmed += 1;
+    }
+    assert!(dimmed >= 6, "the plate was not there to dim: {out:?}");
+}
+
+#[test]
+fn while_the_pieces_are_apart_their_seam_shows_and_a_trail_follows_the_b() {
+    let (_d, mut a) = opened();
+    run_to(&mut a, LEAD_MS + 1_850.0);
+    let out = drawn(&mut a);
+    let arts = textures(&out);
+    assert!(
+        arts.contains(&5),
+        "the seam is not drawn while they are apart: {arts:?}"
+    );
+    assert_eq!(
+        arts.iter().filter(|&&t| t == 4).count(),
+        3,
+        "the B's piece and its two ghosts: {arts:?}"
+    );
+    let ghosts: Vec<f32> = out
+        .iter()
+        .filter_map(|d| match d {
+            Draw::Spun { tex, colour, .. } if *tex == art().piece && colour[3] < 1.0 => {
+                Some(colour[3])
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(ghosts, [0.07, 0.12]);
+}
+
+#[test]
+fn the_click_lights_the_joint_under_the_b_and_the_seam_is_gone_once_they_have_met() {
+    let (_d, mut a) = opened();
+    run_to(&mut a, LEAD_MS + SEAT + 40.0);
+    let out = drawn(&mut a);
+    let glow = out
+        .iter()
+        .filter(|d| matches!(d, Draw::Rect { colour, .. } if colour[3] < 1.0))
+        .count();
+    assert_eq!(glow, 3, "a soft glow of three rects: {out:?}");
+    let arts = textures(&out);
+    assert!(
+        !arts.contains(&5),
+        "the seam shows with the pieces together: {arts:?}"
+    );
+    assert_eq!(arts.last(), Some(&7), "the B is not on top of the glow");
+}
+
+#[test]
+fn the_glint_is_kept_inside_the_plates_cut_corners_by_stairs() {
+    let (_d, mut a) = opened();
+    run_to(&mut a, LEAD_MS + 2_300.0);
+    let out = drawn(&mut a);
+    let glint: Vec<[f32; 4]> = out
+        .iter()
+        .filter_map(|d| match d {
+            Draw::Spun {
+                tex, clip: Some(c), ..
+            } if *tex == art().glint => Some(*c),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(glint.len(), 7);
+    use slot_b_ui::boot::{PC, PH, PW, PX};
+    let (ox, oy) = ((out_w() as i32 - 640) / 2, (out_h() as i32 - 480) / 2);
+    // the middle stair is the whole plate; those above and below it narrow towards its corners
+    assert_eq!(glint[3][0], (ox + 2 * PX) as f32);
+    assert_eq!(glint[3][2], (2 * PW) as f32);
+    assert_eq!(glint[0][0], (ox + 2 * (PX + PC)) as f32);
+    assert_eq!(glint[0][2], (2 * (PW - 2 * PC)) as f32);
+    assert!(glint[0][2] < glint[1][2] && glint[1][2] < glint[2][2] && glint[2][2] < glint[3][2]);
+    assert_eq!(
+        (glint[0][1], glint[6][1] + glint[6][3]),
+        (
+            (oy + 2 * slot_b_ui::boot::PY) as f32,
+            (oy + 2 * (slot_b_ui::boot::PY + PH)) as f32
+        )
+    );
 }
 
 #[test]
@@ -260,31 +439,6 @@ fn a_slow_frame_slows_the_opening_rather_than_skipping_part_of_it() {
         (1.0, 0.0),
         "two slow frames ran through the logo's fade"
     );
-}
-
-#[test]
-fn a_press_cuts_it_short_and_goes_no_further() {
-    let (_d, mut a) = opened();
-    run_to(&mut a, LEAD_MS + 4_000.0);
-    let before = a.selected_stem().map(str::to_string);
-    a.apply(Action::GbaDown(Btn::Right));
-    a.apply(Action::ShelfRight);
-    a.apply(Action::Insert);
-    a.apply(Action::GbaUp(Btn::Right));
-    assert!(matches!(a.phase(), Phase::Shelf), "{:?}", a.phase());
-    assert_eq!(a.selected_stem().map(str::to_string), before);
-    let lines = a.opening_lines();
-    let heard = run_for(&mut a, CUT_OUT_MS + 20.0);
-    assert!(heard.is_empty(), "keys typed on after the cut: {heard:?}");
-    assert_eq!(a.opening_lines(), Vec::new(), "the terminal is still lit");
-    assert!(!lines.is_empty());
-    run_for(&mut a, CUT_REVEAL_MS + 40.0);
-    assert!(
-        !a.opening_shown(),
-        "the shelf is not in half a second after the press"
-    );
-    assert!(matches!(a.phase(), Phase::Shelf));
-    assert_eq!(a.selected_stem().map(str::to_string), before);
 }
 
 #[test]
@@ -315,54 +469,6 @@ fn power_and_the_lid_end_it_at_once_and_brightness_works_through_it() {
     );
     a.apply(Action::PowerPress);
     assert!(!a.opening_shown(), "POWER waited for the opening");
-}
-
-#[test]
-fn nothing_under_the_black_is_drawn_and_the_lines_stand_on_the_terminals_grid() {
-    let (_d, mut a) = opened();
-    run_to(&mut a, LEAD_MS + 1_000.0);
-    a.set_opening_face(0, TexId::from_raw(910), 469, 20);
-    a.set_opening_face(3, TexId::from_raw(913), 487, 20);
-    let mut out = Vec::new();
-    a.draw(&mut out);
-    let (w, h) = (out_w() as f32, out_h() as f32);
-    assert_eq!(
-        out[0],
-        Draw::Rect {
-            x: 0.0,
-            y: 0.0,
-            w,
-            h,
-            colour: [0.0, 0.0, 0.0, 1.0]
-        }
-    );
-    let x = (((out_w() - 576) / 2) & !1) as f32;
-    let y = (((out_h() - 396) / 2) & !1) as f32;
-    assert_eq!(
-        out[1..],
-        [
-            Draw::Tex {
-                x,
-                y: y - 2.0,
-                w: 469.0,
-                h: 20.0,
-                tex: TexId::from_raw(910),
-                alpha: 1.0
-            },
-            Draw::Tex {
-                x,
-                y: y + 3.0 * 18.0 - 2.0,
-                w: 487.0,
-                h: 20.0,
-                tex: TexId::from_raw(913),
-                alpha: 1.0
-            },
-        ],
-        "the shelf is drawn under the black"
-    );
-    if (out_w(), out_h()) == (640, 480) {
-        assert_eq!((x, y), (32.0, 42.0), "X5's margins");
-    }
 }
 
 #[test]

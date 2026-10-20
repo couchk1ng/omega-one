@@ -4,6 +4,8 @@
 
 The project is now called Slot B: the binary is `System/slot-b`, its settings file is `Config/slot-b.state`, and its environment variables start `SLOT_B_`.
 
+The boot sequence is new. After the bootloader's logo fades to black, a grid wipes in from the middle and a silver plate wipes in, cut in two with a notch in its end. SLOT stamps in a letter at a time, each with a rising note, and a blue B on its own piece slides in from the right, speeding up, until its tab bottoms out in the notch with a click, a flash and a chime. It carries on at the speed it arrived, braking, into SLOT's piece, and the two make one plate with no seam. It runs three seconds, any button skips it, and the shelf fades in. It is drawn from a dozen draw items a frame: the art is made once into a few small textures. Its sounds peak under the carts'. The X5-style terminal opening is gone; the start notice still uses its letters.
+
 The boot images in `card/System` are the Slot B plate beside the BIOS screen's text, made again from the plate with `assets/logo/bioslogo.sh` and the `bootscreens` example. The old logo's drawing and the scripts that rendered it are gone.
 
 Genesis and Mega Drive games run on Genesis Plus GX.

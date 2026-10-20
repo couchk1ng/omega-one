@@ -4,6 +4,7 @@ pub mod background_screen;
 pub mod bluetooth;
 pub mod bluetooth_screen;
 pub mod boot_fade;
+pub mod boot_seq;
 pub mod bootlogo;
 pub mod build_info;
 pub mod cable;

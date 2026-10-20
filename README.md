@@ -28,9 +28,10 @@ Own an untested one? Say how it goes: a report of what works on it is the most u
   label scans: Game Boy carts in their own plastics, SNES carts in the American shape for a game
   from the USA and the Super Famicom's for the rest, and PlayStation discs, a game on several
   discs standing as a stack of them. The one you are on floats and sways; A pulls it down out of
-  the screen into the handheld, and the game comes on like a tube TV. At power-on, an opening in the
-  style of Mega Man X5's boot terminal tells you the handheld's memory, chip and battery, then
-  fades into the shelf.
+  the screen into the handheld, and the game comes on like a tube TV. At power-on, a grid wipes in
+  and a silver plate spells SLOT; a blue B on its own piece slides in from the right, speeding up,
+  clicks home and carries on into it with a flash and a chime, and the shelf fades in. Any button
+  skips it.
 - Six cores: mGBA and gpSP for the GBA and Snes9x and Supafaust for the SNES, chosen per cart;
   mGBA for the Game Boys; PCSX ReARMed for the PlayStation, with a BIOS of its own built in;
   Genesis Plus GX for the Genesis and Mega Drive. GBA fills a 640x480 screen and the PlayStation

@@ -1,4 +1,4 @@
-use super::chime::{self, BLIP_S, KEY_S, READING_S, SLOT_B_S};
+use super::chime::{self, BOOT_RISE_S, BOOT_SEAT_S, BOOT_SLIDE_S, BOOT_STAMP_S, KEY_S, READING_S};
 
 const INSERT: &[u8] = include_bytes!("../../assets/insert.pcm");
 const EJECT: &[u8] = include_bytes!("../../assets/eject.pcm");
@@ -8,14 +8,18 @@ const ASSET_HZ: f32 = 48_000.0;
 pub enum Sfx {
     Insert,
     Eject,
-    /// The opening's power-on: a square wave swept up from 150 Hz to 1 kHz, as Mega Man X5's.
-    Blip,
-    /// A key typed in the opening: 440 Hz with every harmonic, gone in a breath.
+    /// A key typed in the start notice: 440 Hz with every harmonic, gone in a breath.
     Key,
-    /// A file read in the opening: a fast warble of A5, C6 and F5 that dies away.
+    /// A file read in the start notice: a fast warble of A5, C6 and F5 that dies away.
     Reading,
-    /// The opening's last file, SLOTB: the same warble an octave down, held longer.
-    SlotB,
+    /// The boot sequence's power-on: a low triangle wave rising under the grid.
+    BootRise,
+    /// SLOT stamping in: a soft thump as the plate lands and a rising note for each letter.
+    BootStamp,
+    /// The B's piece sliding in: a sine sweeping up as it speeds.
+    BootSlide,
+    /// The click as the B's tab bottoms out, a thunk, and a chord that blooms and rings.
+    BootSeat,
 }
 
 impl Sfx {
@@ -23,7 +27,12 @@ impl Sfx {
         match self {
             Sfx::Insert => 0.097,
             Sfx::Eject => 0.021,
-            Sfx::Blip | Sfx::Key | Sfx::Reading | Sfx::SlotB => 0.0,
+            Sfx::Key
+            | Sfx::Reading
+            | Sfx::BootRise
+            | Sfx::BootStamp
+            | Sfx::BootSlide
+            | Sfx::BootSeat => 0.0,
         }
     }
 
@@ -31,10 +40,12 @@ impl Sfx {
         let secs = match self {
             Sfx::Insert => INSERT.len() as f32 / 2.0 / ASSET_HZ,
             Sfx::Eject => EJECT.len() as f32 / 2.0 / ASSET_HZ,
-            Sfx::Blip => BLIP_S,
             Sfx::Key => KEY_S,
             Sfx::Reading => READING_S,
-            Sfx::SlotB => SLOT_B_S,
+            Sfx::BootRise => BOOT_RISE_S,
+            Sfx::BootStamp => BOOT_STAMP_S,
+            Sfx::BootSlide => BOOT_SLIDE_S,
+            Sfx::BootSeat => BOOT_SEAT_S,
         };
         secs - self.lead()
     }
@@ -43,9 +54,12 @@ impl Sfx {
         let pcm = match self {
             Sfx::Insert => INSERT,
             Sfx::Eject => EJECT,
-            Sfx::Blip | Sfx::Key | Sfx::Reading | Sfx::SlotB => {
-                return stereo(chime::render(self, sample_rate))
-            }
+            Sfx::Key
+            | Sfx::Reading
+            | Sfx::BootRise
+            | Sfx::BootStamp
+            | Sfx::BootSlide
+            | Sfx::BootSeat => return stereo(chime::render(self, sample_rate)),
         };
         stereo(resampled(pcm, sample_rate))
     }

@@ -1,10 +1,11 @@
-//! The opening: Mega Man X5's NOM ENGINEER WORK SYSTEM boot screen, told about this handheld.
-//! A boot that lands on the shelf fades the bootloader's logo out to black, fades the terminal
-//! in, types its way through ten seconds of it, fades it back out and fades the shelf in. A
-//! press cuts it short: the terminal fades out at once, then the shelf comes in, and the press
-//! goes no further. Once the shelf shows through, a press ends it there and is the shelf's.
-//! When the boot left a game on the shelf because its start took slot-b down, the black
-//! stays and the start notice comes up on it in place of the shelf (`start_notice`).
+//! The opening: the boot sequence (`boot_seq`) played over the shelf. A boot that lands on the
+//! shelf fades the bootloader's logo out to black, then plays three seconds of grid, plate and
+//! the B's click on it, fades that out and lifts the black off the shelf. A press cuts it
+//! short: the sequence fades out at once, then the shelf comes in, and the press goes no
+//! further. Once the shelf shows through, a press ends it there and is the shelf's.
+//! When the boot left a game on the shelf because its start took slot-b down, the black stays
+//! and the start notice comes up on it in place of the shelf (`start_notice`), in the
+//! terminal's letters, which this module still draws and tells its facts for.
 
 use slot_b_gfx::{out_h, out_w};
 use slot_b_input::Action;
@@ -12,40 +13,31 @@ use slot_b_power::{baseos_release, BaseosRelease};
 use slot_b_ui::{ease, Draw, TexId, OPENING_ADVANCE, OPENING_PITCH, OPENING_RISE};
 
 use crate::app::{App, Phase};
-use crate::audio::Sfx;
 use crate::boot_fade::{FADE_MS, STEP_MS};
+use crate::boot_seq::{self, Art, Block};
 
-/// How long the bootloader's logo takes to fade to black before the terminal comes in, in
-/// ms: the logo's own fade.
+/// How long the bootloader's logo takes to fade to black before the sequence starts, in ms:
+/// the logo's own fade.
 pub const LEAD_MS: f32 = FADE_MS;
 
-/// How long the terminal takes to fade in, and out at the end, in ms.
+/// How long the start notice's terminal takes to fade in, in ms.
 pub const IN_MS: f32 = 500.0;
-pub const OUT_MS: f32 = 500.0;
 
-/// How long the terminal runs from the start of its fade in to the start of its fade out.
-pub const SCRIPT_MS: f32 = 10_000.0;
+/// How long the sequence runs, from its start to the start of its fade out, in ms, and how
+/// long it takes to fade out.
+pub const SCRIPT_MS: f32 = boot_seq::HOLD_MS;
+pub const OUT_MS: f32 = 300.0;
 
 /// How long the black takes to lift off the shelf, in ms.
 pub const REVEAL_MS: f32 = 500.0;
 
-/// How long a press takes to fade the terminal out, and the shelf in after it.
+/// How long a press takes to fade the sequence out, and the shelf in after it.
 pub const CUT_OUT_MS: f32 = 200.0;
 pub const CUT_REVEAL_MS: f32 = 300.0;
 
-/// The terminal's size, in letters and lines: the screen it was written for.
+/// The start notice's terminal's size, in letters and lines: the screen it was written for.
 pub(crate) const COLS: u32 = 32;
 pub(crate) const LINES: u32 = 22;
-
-/// How long a count of memory takes to run up, and in how many steps.
-const COUNT_MS: f32 = 800.0;
-const COUNT_STEPS: u32 = 16;
-
-/// The gaps between keys, taken in turn: a hand types unevenly.
-const KEY_GAPS: [f32; 7] = [120.0, 95.0, 150.0, 110.0, 165.0, 100.0, 135.0];
-
-/// How long after its prompt a line's first key is typed.
-const FIRST_KEY_MS: f32 = 300.0;
 
 /// What the opening tells about the handheld.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -125,185 +117,64 @@ fn battery_mah(target: &str) -> Option<u32> {
     }
 }
 
-/// How one line of the terminal comes up.
-enum Line {
-    /// Printed whole.
-    Shown(String),
-    /// `prompt` printed, then `text` typed a key at a time, at `keys` ms, starred out when
-    /// `masked`.
-    Typed {
-        prompt: &'static str,
-        text: &'static str,
-        keys: Vec<f32>,
-        masked: bool,
-    },
-    /// `label` and a count of MB run up to `to`.
-    Counted { label: &'static str, to: u32 },
-    /// The battery: its size where it is known, and its charge as it stands.
-    Battery(Option<u32>),
+/// The sequence's art as the frontend uploaded it, a texture for each piece.
+#[derive(Copy, Clone)]
+pub struct OpeningArt {
+    pub grid: TexId,
+    pub left: TexId,
+    pub letters: TexId,
+    pub piece: TexId,
+    pub seam: TexId,
+    pub shadow: TexId,
+    pub glyph: TexId,
+    pub glint: TexId,
 }
 
-/// A line, the terminal's row it is printed on, and when it comes up, in ms from the start of
-/// the terminal's fade in.
-struct Row {
-    row: usize,
-    at: f32,
-    line: Line,
-}
-
-/// The terminal's lines and the sounds they make, after X5's.
-struct Script {
-    rows: Vec<Row>,
-    sounds: Vec<(f32, Sfx)>,
-    gaps: std::iter::Cycle<std::slice::Iter<'static, f32>>,
-}
-
-impl Script {
-    fn new(facts: &Facts) -> Script {
-        let mut s = Script {
-            rows: Vec::new(),
-            sounds: vec![(0.0, Sfx::Blip)],
-            gaps: KEY_GAPS.iter().cycle(),
-        };
-        s.shown(0, 0.0, "SLOT B HANDHELD SYSTEM");
-        let model: String = facts.model.chars().take(COLS as usize - 6).collect();
-        s.shown(1, 0.0, &format!("Model {model}"));
-        s.shown(3, 450.0, "Licensed under GPL-3.0");
-        s.shown(4, 450.0, "slot-b on BaseOS");
-        s.shown(5, 450.0, "GPL-3.0 Free Software");
-        s.counted(7, 850.0, "real  mem =", facts.mem_mb);
-        s.counted(8, 850.0 + COUNT_MS + 150.0, "avail mem =", facts.avail_mb);
-        s.shown(10, 2750.0, "cpu     : H700 1.5GHz x4");
-        s.shown(11, 3000.0, "gpu     : Mali-G31 MP2");
-        s.push(12, 3250.0, Line::Battery(facts.battery_mah));
-        let done = s.typed(14, 3650.0, "login: ", "root", false);
-        let done = s.typed(15, done + 300.0, "code : ", "root", true);
-        let done = s.typed(17, done + 350.0, ">", "slotb -boot -a", false);
-        let read = done + 400.0;
-        for (i, (file, sound)) in [
-            ("GBA.BIOS", Sfx::Reading),
-            ("CARTS", Sfx::Reading),
-            ("SLOTB", Sfx::SlotB),
+impl OpeningArt {
+    /// Every texture the art is made of.
+    pub(crate) fn textures(&self) -> [TexId; 8] {
+        [
+            self.grid,
+            self.left,
+            self.letters,
+            self.piece,
+            self.seam,
+            self.shadow,
+            self.glyph,
+            self.glint,
         ]
-        .into_iter()
-        .enumerate()
-        {
-            let at = read + 550.0 * i as f32;
-            s.shown(19 + i, at, &format!("reading \"{file}\""));
-            s.sounds.push((at, sound));
+    }
+
+    fn tex(&self, art: Art) -> TexId {
+        match art {
+            Art::Grid => self.grid,
+            Art::Left => self.left,
+            Art::Letters => self.letters,
+            Art::Piece => self.piece,
+            Art::Seam => self.seam,
+            Art::Shadow => self.shadow,
+            Art::Glyph => self.glyph,
+            Art::Glint => self.glint,
         }
-        s
-    }
-
-    fn push(&mut self, row: usize, at: f32, line: Line) {
-        self.rows.push(Row { row, at, line });
-    }
-
-    fn shown(&mut self, row: usize, at: f32, text: &str) {
-        self.push(row, at, Line::Shown(text.into()));
-    }
-
-    fn counted(&mut self, row: usize, at: f32, label: &'static str, to: u32) {
-        self.push(row, at, Line::Counted { label, to });
-    }
-
-    /// Types `text` after `prompt`, from `at`, a sound to each key that is not a space, and
-    /// says when the last key falls.
-    fn typed(
-        &mut self,
-        row: usize,
-        at: f32,
-        prompt: &'static str,
-        text: &'static str,
-        masked: bool,
-    ) -> f32 {
-        let mut keys = Vec::new();
-        let mut t = at + FIRST_KEY_MS;
-        for ch in text.chars() {
-            keys.push(t);
-            if ch != ' ' {
-                self.sounds.push((t, Sfx::Key));
-            }
-            t += self.gaps.next().copied().unwrap_or(120.0);
-        }
-        let last = keys.last().copied().unwrap_or(at);
-        self.push(
-            row,
-            at,
-            Line::Typed {
-                prompt,
-                text,
-                keys,
-                masked,
-            },
-        );
-        last
-    }
-
-    /// Row `row`'s text `ms` into the terminal, with the battery at `battery` percent, if it
-    /// has come up.
-    fn text(&self, row: &Row, ms: f32, battery: Option<u8>) -> Option<String> {
-        if ms < row.at {
-            return None;
-        }
-        Some(match &row.line {
-            Line::Shown(text) => text.clone(),
-            Line::Typed {
-                prompt,
-                text,
-                keys,
-                masked,
-            } => {
-                let n = keys.iter().filter(|&&k| ms >= k).count();
-                let typed: String = if *masked {
-                    "*".repeat(n)
-                } else {
-                    text.chars().take(n).collect()
-                };
-                format!("{prompt}{typed}")
-            }
-            Line::Counted { label, to } => {
-                let step =
-                    (((ms - row.at) / COUNT_MS * COUNT_STEPS as f32) as u32 + 1).min(COUNT_STEPS);
-                let n = (*to as u64 * step as u64 / COUNT_STEPS as u64) as u32;
-                format!("{label}{n:5} MB")
-            }
-            Line::Battery(mah) => {
-                let size = mah.map(|m| format!("{m}mAh  ")).unwrap_or_default();
-                let charge = battery.map(|p| format!("{p}%")).unwrap_or_default();
-                format!("battery : {size}{charge}").trim_end().to_string()
-            }
-        })
-    }
-
-    /// The last sound due after `from` ms and by `to`.
-    fn sound(&self, from: f32, to: f32) -> Option<Sfx> {
-        self.sounds
-            .iter()
-            .filter(|(at, _)| *at > from && *at <= to)
-            .max_by(|a, b| a.0.total_cmp(&b.0))
-            .map(|(_, s)| *s)
     }
 }
 
-/// The opening while it runs: its script, how far in it is and what has been uploaded of it.
+/// The opening while it plays.
 pub(crate) struct Opening {
-    script: Script,
-    /// ms since its first frame, once there has been one.
+    /// How long it has run, in ms from its first frame; None before that.
     elapsed: Option<f32>,
-    /// When a press cut it short, and how bright the terminal stood then.
+    /// When a press cut it short, and how brightly the sequence was drawn then.
     cut: Option<(f32, f32)>,
-    /// Each row's face, as the frontend uploaded it for the row's text now.
-    faces: Vec<Option<(TexId, u32, u32)>>,
+    /// The art the frontend has uploaded for it, once it has.
+    art: Option<OpeningArt>,
 }
 
 impl Opening {
-    fn new(facts: &Facts) -> Opening {
+    fn new() -> Opening {
         Opening {
-            script: Script::new(facts),
             elapsed: None,
             cut: None,
-            faces: vec![None; LINES as usize],
+            art: None,
         }
     }
 
@@ -311,13 +182,13 @@ impl Opening {
         self.elapsed.unwrap_or(0.0)
     }
 
-    /// How far into the terminal it is, in ms from the start of its fade in: still once a
-    /// press has cut it short.
+    /// How far into the sequence it is, in ms from its start: still once a press has cut it
+    /// short. Negative while the bootloader's logo fades.
     fn script_ms(&self) -> f32 {
         self.cut.map_or(self.elapsed(), |(at, _)| at) - LEAD_MS
     }
 
-    /// How brightly the terminal is drawn over the black.
+    /// How brightly the sequence is drawn over the black.
     fn ink(&self) -> f32 {
         if let Some((at, level)) = self.cut {
             return level * (1.0 - ease(((self.elapsed() - at) / CUT_OUT_MS).clamp(0.0, 1.0)));
@@ -325,12 +196,10 @@ impl Opening {
         let ms = self.script_ms();
         if ms < 0.0 {
             0.0
-        } else if ms < IN_MS {
-            ease(ms / IN_MS)
         } else if ms < SCRIPT_MS {
             1.0
         } else {
-            1.0 - ease(((ms - SCRIPT_MS) / OUT_MS).min(1.0))
+            1.0 - ((ms - SCRIPT_MS) / OUT_MS).min(1.0)
         }
     }
 
@@ -343,7 +212,7 @@ impl Opening {
         }
     }
 
-    /// How black the screen is under the terminal.
+    /// How black the screen is under the sequence.
     fn veil(&self) -> f32 {
         let (from, takes) = self.reveal();
         1.0 - ease(((self.elapsed() - from) / takes).clamp(0.0, 1.0))
@@ -356,16 +225,6 @@ impl Opening {
 
     fn over(&self) -> bool {
         self.veil() <= 0.0
-    }
-
-    /// The terminal's rows and what each says now.
-    fn lines(&self, battery: Option<u8>) -> Vec<(usize, String)> {
-        let ms = self.script_ms();
-        self.script
-            .rows
-            .iter()
-            .filter_map(|r| self.script.text(r, ms, battery).map(|t| (r.row, t)))
-            .collect()
     }
 }
 
@@ -389,7 +248,7 @@ impl App {
     pub fn start_opening(&mut self, facts: &Facts) {
         self.tell_start_notice(facts);
         if self.boot_fades() {
-            self.opening = Some(Opening::new(facts));
+            self.opening = Some(Opening::new());
         }
     }
 
@@ -398,24 +257,21 @@ impl App {
         self.opening.is_some()
     }
 
-    /// How black the opening has the screen, and how brightly its terminal is drawn, while it
+    /// How black the opening has the screen, and how brightly its sequence is drawn, while it
     /// plays.
     pub fn opening_levels(&self) -> Option<(f32, f32)> {
         self.opening.as_ref().map(|o| (o.veil(), o.ink()))
     }
 
-    /// The terminal's rows and what each says now, while it can be seen.
-    pub fn opening_lines(&self) -> Vec<(usize, String)> {
-        match &self.opening {
-            Some(o) if o.ink() > 0.0 => o.lines(self.battery().map(|b| b.percent)),
-            _ => Vec::new(),
-        }
+    /// Whether the opening is waiting for the art it draws, so the frontend should upload it.
+    pub fn opening_wants_art(&self) -> bool {
+        self.opening.as_ref().is_some_and(|o| o.art.is_none())
     }
 
-    /// Hands the opening `tex`, `w` by `h`, as row `row`'s face for what it says now.
-    pub fn set_opening_face(&mut self, row: usize, tex: TexId, w: u32, h: u32) {
-        if let Some(face) = self.opening.as_mut().and_then(|o| o.faces.get_mut(row)) {
-            *face = Some((tex, w, h));
+    /// Hands the opening the textures of the art it draws.
+    pub fn set_opening_art(&mut self, art: OpeningArt) {
+        if let Some(o) = self.opening.as_mut() {
+            o.art = Some(art);
         }
     }
 
@@ -481,7 +337,7 @@ impl App {
             Some(e) => e + (dt * 1000.0).min(STEP_MS),
         });
         if o.cut.is_none() {
-            if let Some(sfx) = o.script.sound(before, o.script_ms()) {
+            if let Some(sfx) = boot_seq::sound(before, o.script_ms()) {
                 self.sfx = Some(sfx);
             }
         }
@@ -490,10 +346,49 @@ impl App {
         }
     }
 
-    /// The black over everything and the terminal on it, as far as each has faded.
+    /// The black over everything and the sequence on it, as far as each has faded.
     pub(crate) fn draw_opening(&self, out: &mut Vec<Draw>) {
-        if let Some(o) = &self.opening {
-            draw_terminal(o.veil(), o.ink(), &o.faces, out);
+        let Some(o) = &self.opening else {
+            return;
+        };
+        let veil = o.veil();
+        if veil <= 0.0 {
+            return;
+        }
+        out.push(Draw::Rect {
+            x: 0.0,
+            y: 0.0,
+            w: out_w() as f32,
+            h: out_h() as f32,
+            colour: [0.0, 0.0, 0.0, veil],
+        });
+        let Some(art) = o.art else {
+            return;
+        };
+        for block in boot_seq::scene(o.script_ms(), o.ink(), out_w(), out_h()) {
+            out.push(match block {
+                Block::Rect { x, y, w, h, colour } => Draw::Rect { x, y, w, h, colour },
+                Block::Art {
+                    art: piece,
+                    x,
+                    y,
+                    w,
+                    h,
+                    colour,
+                    clip,
+                } => Draw::Spun {
+                    x,
+                    y,
+                    w,
+                    h,
+                    tex: art.tex(piece),
+                    colour,
+                    turn: 0.0,
+                    yaw: 0.0,
+                    depth: 0.0,
+                    clip,
+                },
+            });
         }
     }
 }

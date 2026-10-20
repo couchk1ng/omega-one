@@ -1,11 +1,13 @@
-//! The opening's lines, each made again when what it says changes: a key typed, a count run
-//! up. Once the opening is over their textures shrink to a pixel and give their memory back.
+//! The lines of a terminal, each made again when what it says changes: a key typed, a count
+//! run up, for the start notice; and the boot sequence's art, uploaded once. Once either is over
+//! its textures shrink to a pixel and give their memory back.
 
-use slot_b_gfx::{Compositor, TexId};
-use slot_b_ui::opening_line;
+use slot_b_gfx::{out_h, out_w, Compositor, TexId};
+use slot_b_ui::{boot_art, opening_line, UndoFace};
 
 use crate::app::App;
 use crate::frontend::faces::upload_nearest;
+use crate::opening::OpeningArt;
 
 /// A terminal's rows in the opening's lettering, as uploaded.
 #[derive(Default)]
@@ -47,12 +49,54 @@ impl TerminalRows {
     }
 }
 
-pub(crate) fn sync_opening(app: &mut App, compositor: &mut Compositor, state: &mut TerminalRows) {
+/// The textures of the boot sequence's art: made when the opening first wants them, and shrunk
+/// to a pixel each, giving their memory back, once it is over.
+#[derive(Default)]
+pub(crate) struct OpeningTextures {
+    made: Option<OpeningArt>,
+    given_back: bool,
+}
+
+impl OpeningTextures {
+    fn upload(compositor: &mut Compositor) -> OpeningArt {
+        let art = boot_art(out_w(), out_h());
+        let mut make =
+            |face: &UndoFace| compositor.create_texture_nearest(face.w, face.h, &face.rgba);
+        OpeningArt {
+            grid: make(&art.grid),
+            left: make(&art.left.face),
+            letters: make(&art.letters.face),
+            piece: make(&art.piece.face),
+            seam: make(&art.seam.face),
+            shadow: make(&art.shadow.face),
+            glyph: make(&art.glyph.face),
+            glint: make(&art.glint.face),
+        }
+    }
+
+    fn free(&mut self, compositor: &mut Compositor) {
+        let Some(art) = self.made.filter(|_| !self.given_back) else {
+            return;
+        };
+        for tex in art.textures() {
+            compositor.update_texture(tex, 1, 1, &[0; 4]);
+        }
+        self.given_back = true;
+    }
+}
+
+pub(crate) fn sync_opening(
+    app: &mut App,
+    compositor: &mut Compositor,
+    state: &mut OpeningTextures,
+) {
     if !app.opening_shown() {
         return state.free(compositor);
     }
-    let lines = app.opening_lines();
-    state.sync(compositor, lines, |row, tex, w, h| {
-        app.set_opening_face(row, tex, w, h)
-    });
+    if app.opening_wants_art() && !state.given_back {
+        let art = *state
+            .made
+            .get_or_insert_with(|| OpeningTextures::upload(compositor));
+        app.set_opening_art(art);
+    }
 }
