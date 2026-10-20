@@ -255,22 +255,6 @@ tasks:
     cmds:
       - cargo run -q -p slot-b --example bootscreens -- card/System
 
-  bootlogos:logo:
-    desc: >-
-      Render the boot images in card/System as they were before the BIOS screen: the logo from
-      assets/logo/slot-b-logo.html over the shelf's grid, one per panel so the grid stays
-      whole. STYLE=smooth for the drawn-straight version instead of pixel art (needs Google
-      Chrome and ImageMagick)
-    vars:
-      STYLE: '{{.STYLE | default "pixel"}}'
-      LOGO_WIDTH: 414
-    cmds:
-      - |
-        set -euo pipefail
-        for size in 640x480 720x480 720x720; do
-          assets/logo/bootlogo.sh {{.STYLE}} "${size%x*}" "${size#*x}" "card/System/bootlogo-$size.bmp" {{.LOGO_WIDTH}}
-        done
-
   sdcard:
     desc: Create an empty content root, ROOT defaults to ./sdcard
     deps: [build]

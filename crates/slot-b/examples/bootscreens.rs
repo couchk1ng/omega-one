@@ -58,7 +58,10 @@ fn main() {
             screen.put(face, x0, y0 + row * OPENING_PITCH - OPENING_RISE);
         }
         let right = x0 + 32 * OPENING_ADVANCE + LOGO_OVERHANG;
-        screen.put(&logo, right - logo.w, y0);
+        // centred on the first four lines, the BIOS's own name and copyright: the plate is wide and short
+        let logo_y =
+            (y0 + (4 * OPENING_PITCH).saturating_sub(logo.h) / 2).saturating_sub(OPENING_RISE);
+        screen.put(&logo, right - logo.w, logo_y);
         let path = out.join(format!("bootlogo-{w}x{h}.bmp"));
         std::fs::write(&path, screen.bmp()).expect("write the boot image");
         println!("{}", path.display());

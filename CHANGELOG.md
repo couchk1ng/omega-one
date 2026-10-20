@@ -4,6 +4,8 @@
 
 The project is now called Slot B: the binary is `System/slot-b`, its settings file is `Config/slot-b.state`, and its environment variables start `SLOT_B_`.
 
+The boot images in `card/System` are the Slot B plate beside the BIOS screen's text, made again from the plate with `assets/logo/bioslogo.sh` and the `bootscreens` example. The old logo's drawing and the scripts that rendered it are gone.
+
 Genesis and Mega Drive games run on Genesis Plus GX.
 
 - Genesis games go in `Games/Genesis` and Mega Drive games in `Games/MD`: a `.md`, `.gen`, `.smd` or
