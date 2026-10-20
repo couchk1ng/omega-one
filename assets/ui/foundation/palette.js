@@ -7,8 +7,8 @@
   colour keeps how light each step is (in OKLCH) and turns the ramp to its own hue, taking as much
   of the ramp's colour as it has itself: none for Night, a touch for Slate, all of it for the rest.
 
-    OmegaPalette.apply('teal');            // the whole page
-    OmegaPalette.apply('plum', someDiv);   // only what is inside someDiv
+    SlotBPalette.apply('teal');            // the whole page
+    SlotBPalette.apply('plum', someDiv);   // only what is inside someDiv
 
   apply() sets the --oz-* properties (and the backdrop's --oz-bg) on the element, has backdrop.js
   paint the backdrop's patterns in the colour there, and tells the components under it to draw
@@ -16,8 +16,8 @@
 
   Load it after pixel.js and backdrop.js, and before the components.
 */
-window.OmegaPalette = (() => {
-  // The backdrop colours omega-zero offers, as crates/omega-ui/src/backdrop.rs draws them.
+window.SlotBPalette = (() => {
+  // The backdrop colours slot-b offers, as crates/slot-b-ui/src/backdrop.rs draws them.
   const BACKDROPS = {
     night: '#050508',
     slate: '#22252c',
@@ -110,9 +110,9 @@ window.OmegaPalette = (() => {
   function apply(name, root = document.documentElement) {
     const tokens = palette(name);
     for (const [token, value] of Object.entries(tokens)) root.style.setProperty(token, value);
-    OmegaBackdrop.paint(root, tokens['--oz-bg']);
+    SlotBBackdrop.paint(root, tokens['--oz-bg']);
     root.dataset.colour = name in BACKDROPS ? name : 'night';
-    document.dispatchEvent(new CustomEvent('omega-palette', { detail: { root } }));
+    document.dispatchEvent(new CustomEvent('slot-b-palette', { detail: { root } }));
   }
 
   apply('night');

@@ -1,0 +1,29 @@
+[package]
+name = "slot-b"
+version = "1.2.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[features]
+default = ["host"]
+host = ["dep:winit", "dep:cpal", "dep:gilrs", "slot-b-gfx/host"]
+device = ["slot-b-gfx/device"]
+
+[dependencies]
+slot-b-gfx = { path = "../slot-b-gfx", default-features = false }
+slot-b-input = { path = "../slot-b-input" }
+slot-b-power = { path = "../slot-b-power" }
+slot-b-retro = { path = "../slot-b-retro" }
+slot-b-store = { path = "../slot-b-store" }
+slot-b-ui = { path = "../slot-b-ui" }
+winit = { workspace = true, optional = true }
+cpal = { workspace = true, optional = true }
+gilrs = { workspace = true, optional = true }
+libloading = { workspace = true }
+lz4_flex = { workspace = true }
+png = { workspace = true }
+
+[dev-dependencies]
+slot-b-gfx = { path = "../slot-b-gfx", default-features = false, features = ["test-support"] }
+tempfile = { workspace = true }

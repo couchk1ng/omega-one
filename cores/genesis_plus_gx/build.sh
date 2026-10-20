@@ -54,7 +54,7 @@ build() {
 
 	apply_patches "$src"
 
-	# The Makefile asks git for the version, which here would name omega-zero's commit.
+	# The Makefile asks git for the version, which here would name slot-b's commit.
 	(cd "$src" && CFLAGS="$device_cflags" $recipe \
 		GIT_VERSION="\" $(printf %s "$commit" | cut -c1-7)\"" \
 		-j"$(getconf _NPROCESSORS_ONLN)")

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>omega-zero flow</title>
+<title>slot-b flow</title>
 <!--
-  Every new omega-zero screen, put together from the kit, and a player that walks between them
+  Every new slot-b screen, put together from the kit, and a player that walks between them
   with the slides the device will draw: the shelf, Settings and everything under it, the
   Controls panel, and the power menu with the screens after it. Open it straight from disk; it
   needs no server or build. The URL's hash picks the screen, the panel size, the colour and any
@@ -20,23 +20,23 @@
 <script src="foundation/pixel.js"></script>
 <script src="foundation/backdrop.js"></script>
 <script src="foundation/palette.js"></script>
-<script src="components/omega-modal.js"></script>
-<script src="components/omega-panel.js"></script>
+<script src="components/slot-b-modal.js"></script>
+<script src="components/slot-b-panel.js"></script>
 <script src="components/action-left.js"></script>
 <script src="components/action-right.js"></script>
 <!-- being drawn for the kit: until they are here, flow/stubs.js stands in for each -->
-<script src="components/omega-row.js"></script>
-<script src="components/omega-list-row.js"></script>
-<script src="components/omega-bar.js"></script>
-<script src="components/omega-pill.js"></script>
+<script src="components/slot-b-row.js"></script>
+<script src="components/slot-b-list-row.js"></script>
+<script src="components/slot-b-bar.js"></script>
+<script src="components/slot-b-pill.js"></script>
 <script src="flow/stubs.js"></script>
 <script src="flow/art.js"></script>
 </head>
 <body>
 <main>
   <div class="intro">
-    <h1>omega-zero flow</h1>
-    <p class="dim">Every new screen of omega-zero's menus, built from the kit in
+    <h1>slot-b flow</h1>
+    <p class="dim">Every new screen of slot-b's menus, built from the kit in
       <a href="storybook.html">storybook.html</a>, and the slides between them as the device draws
       them: 280 ms, smootherstep, every frame on whole art pixels. Walk it with the keys or the
       buttons under the screen. Going deeper slides the screen out to the right and the next in from
@@ -54,7 +54,7 @@
     <div class="device">
       <div class="screen-scroll">
         <div class="screen" id="screen" data-size="640x480">
-          <div class="backdrop omega-backdrop" data-style="grid" data-moving></div>
+          <div class="backdrop slot-b-backdrop" data-style="grid" data-moving></div>
 
           <!-- the shelf, drawn by Rust on the device: two parts that leave it two ways, and its
                system in the bar's pill -->
@@ -72,28 +72,28 @@
           <!-- Settings, from the shelf's START -->
           <section class="part page away" data-screen="settings">
             <div class="modal-area">
-              <omega-modal>
-                <omega-panel label="CONFIGS" class="hug">
-                  <omega-row label="FAST FORWARD" value="6X" carets data-values="2X|3X|4X|6X"></omega-row>
-                  <omega-row label="FAST FORWARD SOUND" value="OFF" carets data-values="OFF|ON"></omega-row>
-                  <omega-row label="COLOUR CORRECTION" value="OFF" carets data-values="OFF|ON"></omega-row>
-                  <omega-row label="RUMBLE" value="ON" carets data-values="ON|OFF"></omega-row>
-                  <omega-row label="LABELS" opens data-opens="labels"></omega-row>
-                </omega-panel>
-                <omega-panel label="GENERAL">
-                  <omega-row label="DATE &amp; TIME" value="OCT 10 16:00" opens data-opens="datetime" data-show="date"></omega-row>
-                  <omega-row label="NETWORK" value="HOME" opens data-opens="network" data-show="network"></omega-row>
-                  <omega-row label="BLUETOOTH" value="8BITDO SN30 PRO" opens data-opens="bluetooth" data-show="bluetooth"></omega-row>
-                  <omega-row label="THEME" opens data-opens="background"></omega-row>
-                  <omega-row label="ABOUT" opens data-opens="about"></omega-row>
-                </omega-panel>
-              </omega-modal>
+              <slot-b-modal>
+                <slot-b-panel label="CONFIGS" class="hug">
+                  <slot-b-row label="FAST FORWARD" value="6X" carets data-values="2X|3X|4X|6X"></slot-b-row>
+                  <slot-b-row label="FAST FORWARD SOUND" value="OFF" carets data-values="OFF|ON"></slot-b-row>
+                  <slot-b-row label="COLOUR CORRECTION" value="OFF" carets data-values="OFF|ON"></slot-b-row>
+                  <slot-b-row label="RUMBLE" value="ON" carets data-values="ON|OFF"></slot-b-row>
+                  <slot-b-row label="LABELS" opens data-opens="labels"></slot-b-row>
+                </slot-b-panel>
+                <slot-b-panel label="GENERAL">
+                  <slot-b-row label="DATE &amp; TIME" value="OCT 10 16:00" opens data-opens="datetime" data-show="date"></slot-b-row>
+                  <slot-b-row label="NETWORK" value="HOME" opens data-opens="network" data-show="network"></slot-b-row>
+                  <slot-b-row label="BLUETOOTH" value="8BITDO SN30 PRO" opens data-opens="bluetooth" data-show="bluetooth"></slot-b-row>
+                  <slot-b-row label="THEME" opens data-opens="background"></slot-b-row>
+                  <slot-b-row label="ABOUT" opens data-opens="about"></slot-b-row>
+                </slot-b-panel>
+              </slot-b-modal>
             </div>
           </section>
 
           <!-- Controls, from the shelf's SELECT: what every button does -->
           <section class="part page away" data-screen="controls">
-            <omega-panel label="CONTROLS" active class="lone controls-panel">
+            <slot-b-panel label="CONTROLS" active class="lone controls-panel">
               <div class="columns">
                 <div class="keymap" style="--keys: 6; --does: 11">
                   <h3>SHELF</h3>
@@ -121,7 +121,7 @@
                   <span class="k">HOLD POWER</span><span>POWER MENU</span>
                 </div>
               </div>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
           <!-- Settings > Network: NETWORK's rows, each switched ON or OFF and each with a panel of
@@ -131,18 +131,18 @@
                or that Wi-Fi is off -->
           <section class="part page away" data-screen="network">
             <div class="modal-area">
-              <omega-modal>
-                <omega-panel label="NETWORK" class="hug">
-                  <omega-row label="WI-FI" value="ON" carets data-values="ON|OFF" data-set="wifi" data-info="wifi"></omega-row>
-                  <omega-row label="NETWORK TIME" value="ON" carets data-values="ON|OFF" data-set="ntp" data-info="time"></omega-row>
-                  <omega-row label="SSH" value="ON" carets data-values="ON|OFF" data-set="ssh" data-info="ssh"></omega-row>
-                </omega-panel>
-                <omega-panel label="AVAILABLE NETWORKS">
+              <slot-b-modal>
+                <slot-b-panel label="NETWORK" class="hug">
+                  <slot-b-row label="WI-FI" value="ON" carets data-values="ON|OFF" data-set="wifi" data-info="wifi"></slot-b-row>
+                  <slot-b-row label="NETWORK TIME" value="ON" carets data-values="ON|OFF" data-set="ntp" data-info="time"></slot-b-row>
+                  <slot-b-row label="SSH" value="ON" carets data-values="ON|OFF" data-set="ssh" data-info="ssh"></slot-b-row>
+                </slot-b-panel>
+                <slot-b-panel label="AVAILABLE NETWORKS">
                   <div class="list">
                     <p class="note" hidden></p>
                   </div>
-                </omega-panel>
-              </omega-modal>
+                </slot-b-panel>
+              </slot-b-modal>
             </div>
           </section>
 
@@ -150,64 +150,64 @@
                found on it, or, with Wi-Fi off, what to do first. The networks it knows are kept
                in a file on the card. -->
           <section class="part page away" data-screen="wifi">
-            <omega-panel label="WI-FI" active class="lone small info">
+            <slot-b-panel label="WI-FI" active class="lone small info">
               <div class="when-online">
-                <omega-row label="NETWORK" value="Home"></omega-row>
-                <omega-row label="SIGNAL" value="-48 dBm"></omega-row>
-                <omega-row label="IP" value="192.168.1.20"></omega-row>
-                <omega-row label="HOST" value="rg35xxsp.local"></omega-row>
-                <omega-row label="MAC" value="e4:5f:01:2a:9c:33"></omega-row>
+                <slot-b-row label="NETWORK" value="Home"></slot-b-row>
+                <slot-b-row label="SIGNAL" value="-48 dBm"></slot-b-row>
+                <slot-b-row label="IP" value="192.168.1.20"></slot-b-row>
+                <slot-b-row label="HOST" value="rg35xxsp.local"></slot-b-row>
+                <slot-b-row label="MAC" value="e4:5f:01:2a:9c:33"></slot-b-row>
                 <p class="note">Networks: Config/wifi.conf</p>
               </div>
               <div class="when-offline"><p class="note">Turn Wi-Fi on first.</p></div>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
           <!-- Settings > Network > Y on NETWORK TIME's row: the clock as the network sets it, the
                date, time and zone as Date & Time has them; with no Wi-Fi it waits for one, and
                with Network Time off it says what to do first -->
           <section class="part page away" data-screen="time">
-            <omega-panel label="NETWORK TIME" active class="lone small info">
+            <slot-b-panel label="NETWORK TIME" active class="lone small info">
               <div class="when-online">
-                <omega-row label="STATUS" value="SYNCED"></omega-row>
-                <omega-row label="DATE" value="2026-10-10"></omega-row>
-                <omega-row label="TIME" value="16:00"></omega-row>
-                <omega-row label="ZONE" value="UTC+00:00"></omega-row>
+                <slot-b-row label="STATUS" value="SYNCED"></slot-b-row>
+                <slot-b-row label="DATE" value="2026-10-10"></slot-b-row>
+                <slot-b-row label="TIME" value="16:00"></slot-b-row>
+                <slot-b-row label="ZONE" value="UTC+00:00"></slot-b-row>
                 <p class="note">Set the zone in Date &amp; Time</p>
               </div>
               <div class="when-offline"><p class="note">Turn Network Time on first.</p></div>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
           <!-- Settings > Network > Y on SSH's row: the login, or, with SSH off or no Wi-Fi, what to
-               do first. The password is the six digits omega-zero makes up on a card that sets
+               do first. The password is the six digits slot-b makes up on a card that sets
                none. -->
           <section class="part page away" data-screen="ssh">
-            <omega-panel label="SSH" active class="lone small info">
+            <slot-b-panel label="SSH" active class="lone small info">
               <div class="when-online">
-                <omega-row label="IP" value="192.168.1.20"></omega-row>
-                <omega-row label="HOST" value="rg35xxsp.local"></omega-row>
-                <omega-row label="USER" value="root"></omega-row>
-                <omega-row label="PASSWORD" value="482913"></omega-row>
-                <omega-row label="PORT" value="22"></omega-row>
+                <slot-b-row label="IP" value="192.168.1.20"></slot-b-row>
+                <slot-b-row label="HOST" value="rg35xxsp.local"></slot-b-row>
+                <slot-b-row label="USER" value="root"></slot-b-row>
+                <slot-b-row label="PASSWORD" value="482913"></slot-b-row>
+                <slot-b-row label="PORT" value="22"></slot-b-row>
                 <p class="note">SFTP uses the same login</p>
               </div>
               <div class="when-offline"><p class="note">Join a Wi-Fi network first.</p></div>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
           <!-- Settings > Network > a network: its passphrase -->
           <section class="part page away" data-screen="keyboard">
             <div class="modal-area">
-              <omega-modal>
-                <omega-panel label="PASSPHRASE FOR HOME" active class="keyboard-panel">
+              <slot-b-modal>
+                <slot-b-panel label="PASSPHRASE FOR HOME" active class="keyboard-panel">
                   <div class="typing">
                     <div class="field-box"><span class="typed"></span><span class="cursor"></span></div>
                     <div class="keys"></div>
                     <div class="hint-line" style="--chars: 38"><b>B</b> DELETE  <b>X</b> SHIFT  <b>Y</b> SPACE  <b>START</b> DONE</div>
                   </div>
-                </omega-panel>
-              </omega-modal>
+                </slot-b-panel>
+              </slot-b-modal>
             </div>
           </section>
 
@@ -216,57 +216,57 @@
                are drawn by screens.js from what it holds -->
           <section class="part page away" data-screen="bluetooth">
             <div class="modal-area">
-              <omega-modal>
-                <omega-panel label="BLUETOOTH" class="hug">
-                  <omega-row label="BLUETOOTH" value="ON" carets data-values="ON|OFF" data-set="bluetooth"></omega-row>
-                </omega-panel>
-                <omega-panel label="DEVICES" class="devices">
+              <slot-b-modal>
+                <slot-b-panel label="BLUETOOTH" class="hug">
+                  <slot-b-row label="BLUETOOTH" value="ON" carets data-values="ON|OFF" data-set="bluetooth"></slot-b-row>
+                </slot-b-panel>
+                <slot-b-panel label="DEVICES" class="devices">
                   <p class="note" hidden></p>
-                </omega-panel>
-              </omega-modal>
+                </slot-b-panel>
+              </slot-b-modal>
             </div>
           </section>
 
           <!-- Settings > Labels -->
           <section class="part page away" data-screen="labels">
-            <omega-panel label="LABELS" active class="lone labels-panel">
-              <omega-row label="SCREENSCRAPER" value="SIGN IN"></omega-row>
-              <omega-row label="FETCH LABELS"></omega-row>
+            <slot-b-panel label="LABELS" active class="lone labels-panel">
+              <slot-b-row label="SCREENSCRAPER" value="SIGN IN"></slot-b-row>
+              <slot-b-row label="FETCH LABELS"></slot-b-row>
               <p class="note">Sign in with your free ScreenScraper account<br>to fetch the real labels of your carts.</p>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
           <!-- Settings > Date & Time -->
           <section class="part page away" data-screen="datetime">
-            <omega-panel label="DATE &amp; TIME" active class="lone datetime-panel">
+            <slot-b-panel label="DATE &amp; TIME" active class="lone datetime-panel">
               <div class="picker"></div>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
           <!-- Settings > Theme: changes the real backdrop behind every screen, and the bar's font -->
           <section class="part page away" data-screen="background">
-            <omega-panel label="THEME" active class="lone small">
-              <omega-row label="BACKGROUND" value="GRID" carets data-values="GRID|PLATES|DOTTED|DITHER|RIVETS|BITS|SOLID" data-set="style"></omega-row>
-              <omega-row label="MOTION" value="MOVING" carets data-values="MOVING|STILL" data-set="moving"></omega-row>
-              <omega-row label="COLOUR" value="NIGHT" carets data-values="NIGHT|SLATE|NAVY|TEAL|GREEN|PLUM|CRIMSON|AMBER" data-set="colour"></omega-row>
-              <omega-row label="FONT" value="BOLD" carets data-values="BOLD|THIN" data-set="font"></omega-row>
-            </omega-panel>
+            <slot-b-panel label="THEME" active class="lone small">
+              <slot-b-row label="BACKGROUND" value="GRID" carets data-values="GRID|PLATES|DOTTED|DITHER|RIVETS|BITS|SOLID" data-set="style"></slot-b-row>
+              <slot-b-row label="MOTION" value="MOVING" carets data-values="MOVING|STILL" data-set="moving"></slot-b-row>
+              <slot-b-row label="COLOUR" value="NIGHT" carets data-values="NIGHT|SLATE|NAVY|TEAL|GREEN|PLUM|CRIMSON|AMBER" data-set="colour"></slot-b-row>
+              <slot-b-row label="FONT" value="BOLD" carets data-values="BOLD|THIN" data-set="font"></slot-b-row>
+            </slot-b-panel>
           </section>
 
-          <!-- Settings > About: what omega-zero is, the handheld it runs on, and what it is made
+          <!-- Settings > About: what slot-b is, the handheld it runs on, and what it is made
                with. Nothing on it is picked, so both titles are lit and no row is. The build is
                the commit's short hash, -DIRTY after it for a build with changes not committed. -->
           <section class="part page away" data-screen="about">
             <div class="modal-area">
-              <omega-modal>
-                <omega-panel label="OMEGA-ZERO" active class="hug">
-                  <omega-row label="VERSION" value="0.0.2"></omega-row>
-                  <omega-row label="BUILD" value="68CDBC4"></omega-row>
-                  <omega-row label="AUTHOR" value="@OAURAMOS"></omega-row>
-                  <omega-row label="HANDHELD" value="RG35XX SP"></omega-row>
-                  <omega-row label="BATTERY" value="86% CHARGING"></omega-row>
-                </omega-panel>
-                <omega-panel label="CREDITS" active>
+              <slot-b-modal>
+                <slot-b-panel label="SLOT B" active class="hug">
+                  <slot-b-row label="VERSION" value="0.0.2"></slot-b-row>
+                  <slot-b-row label="BUILD" value="68CDBC4"></slot-b-row>
+                  <slot-b-row label="AUTHOR" value="SEE README"></slot-b-row>
+                  <slot-b-row label="HANDHELD" value="RG35XX SP"></slot-b-row>
+                  <slot-b-row label="BATTERY" value="86% CHARGING"></slot-b-row>
+                </slot-b-panel>
+                <slot-b-panel label="CREDITS" active>
                   <div class="credits">
                     <p>Emulation by mGBA (MPL-2.0), gpSP (GPL-2.0),</p>
                     <p>Snes9x (no commercial use), Mednafen's</p>
@@ -277,8 +277,8 @@
                     <p>Labels: ScreenScraper. Built with Claude.</p>
                     <p>Free software under the GPL-3.0. See README.</p>
                   </div>
-                </omega-panel>
-              </omega-modal>
+                </slot-b-panel>
+              </slot-b-modal>
             </div>
           </section>
 
@@ -286,30 +286,30 @@
                it was held on, coming down from the top as that screen drops out of the bottom,
                and B goes back up there. -->
           <section class="part page away" data-screen="power">
-            <omega-panel label="POWER" active class="lone small">
-              <omega-row label="RESTART" data-opens="restarting"></omega-row>
-              <omega-row label="POWER OFF" data-opens="poweroff"></omega-row>
-            </omega-panel>
+            <slot-b-panel label="POWER" active class="lone small">
+              <slot-b-row label="RESTART" data-opens="restarting"></slot-b-row>
+              <slot-b-row label="POWER OFF" data-opens="poweroff"></slot-b-row>
+            </slot-b-panel>
           </section>
 
           <!-- POWER's choice, shown until the handheld goes down: nothing can be pressed, so the
                bar sinks away -->
           <section class="part page away" data-screen="restarting">
-            <omega-panel label="RESTART" active class="lone small going">
+            <slot-b-panel label="RESTART" active class="lone small going">
               <p class="note">Restarting<i class="g ellipsis"></i></p>
-            </omega-panel>
+            </slot-b-panel>
           </section>
           <section class="part page away" data-screen="poweroff">
-            <omega-panel label="POWER OFF" active class="lone small going">
+            <slot-b-panel label="POWER OFF" active class="lone small going">
               <p class="note">Turning off<i class="g ellipsis"></i></p>
-            </omega-panel>
+            </slot-b-panel>
           </section>
 
-          <omega-bar>
+          <slot-b-bar>
             <action-left slot="left" label="CONTROLS" hint="SELECT"></action-left>
-            <omega-pill slot="middle" text="GBA" centred></omega-pill>
+            <slot-b-pill slot="middle" text="GBA" centred></slot-b-pill>
             <action-right slot="right" label="SETTINGS" hint="START"></action-right>
-          </omega-bar>
+          </slot-b-bar>
         </div>
       </div>
 

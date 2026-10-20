@@ -1,0 +1,19 @@
+[package]
+name = "slot-b-ui"
+version = "1.2.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+fontdue = { workspace = true }
+png = { workspace = true }
+resvg = { workspace = true }
+usvg = { workspace = true }
+slot-b-gfx = { path = "../slot-b-gfx", default-features = false }
+slot-b-power = { path = "../slot-b-power" }
+slot-b-store = { path = "../slot-b-store" }
+
+[dev-dependencies]
+slot-b-gfx = { path = "../slot-b-gfx", features = ["test-support"] }
+tempfile.workspace = true

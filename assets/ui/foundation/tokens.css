@@ -1,10 +1,10 @@
 /*
-  The sizes every omega-zero UI component draws with, and the shelf's backdrop. The colours (the
+  The sizes every slot-b UI component draws with, and the shelf's backdrop. The colours (the
   --oz-* properties) are not here: foundation/palette.js makes them from the backdrop colour the
   player picks in Settings > Background > Colour, Night unless told otherwise.
 */
 :root {
-  /* One art pixel. omega-zero draws its pixel art at 2x2 (the boot logo's `pixel` style), and
+  /* One art pixel. slot-b draws its pixel art at 2x2 (the boot logo's `pixel` style), and
      every size in the components is a whole number of these. */
   --u: 2px;
   --oz-font: "Pixel Code", ui-monospace, Menlo, monospace;
@@ -15,23 +15,23 @@
    tile from the top left, one period across (40px, Bits 80px), shown a pixel to an art pixel.
    data-moving drifts it left in whole pixels as the device does with backdrop_moving on: 16px a
    second, Bits 10. */
-.omega-backdrop {
+.slot-b-backdrop {
   --oz-pattern: var(--oz-pattern-grid);
   background-color: var(--oz-bg);
   background-image: var(--oz-pattern);
   background-size: 40px 40px;
   image-rendering: pixelated;
 }
-.omega-backdrop[data-style="plates"] { --oz-pattern: var(--oz-pattern-plates); }
-.omega-backdrop[data-style="dotted"] { --oz-pattern: var(--oz-pattern-dotted); }
-.omega-backdrop[data-style="dither"] { --oz-pattern: var(--oz-pattern-dither); }
-.omega-backdrop[data-style="rivets"] { --oz-pattern: var(--oz-pattern-rivets); }
-.omega-backdrop[data-style="bits"] { --oz-pattern: var(--oz-pattern-bits); background-size: 80px 80px; }
-.omega-backdrop[data-style="solid"] { --oz-pattern: none; }
-.omega-backdrop[data-moving] { animation: omega-drift 2.5s steps(40) infinite; }
-.omega-backdrop[data-style="bits"][data-moving] { animation: omega-drift-bits 8s steps(80) infinite; }
-@keyframes omega-drift { to { background-position: -40px 0; } }
-@keyframes omega-drift-bits { to { background-position: -80px 0; } }
+.slot-b-backdrop[data-style="plates"] { --oz-pattern: var(--oz-pattern-plates); }
+.slot-b-backdrop[data-style="dotted"] { --oz-pattern: var(--oz-pattern-dotted); }
+.slot-b-backdrop[data-style="dither"] { --oz-pattern: var(--oz-pattern-dither); }
+.slot-b-backdrop[data-style="rivets"] { --oz-pattern: var(--oz-pattern-rivets); }
+.slot-b-backdrop[data-style="bits"] { --oz-pattern: var(--oz-pattern-bits); background-size: 80px 80px; }
+.slot-b-backdrop[data-style="solid"] { --oz-pattern: none; }
+.slot-b-backdrop[data-moving] { animation: slot-b-drift 2.5s steps(40) infinite; }
+.slot-b-backdrop[data-style="bits"][data-moving] { animation: slot-b-drift-bits 8s steps(80) infinite; }
+@keyframes slot-b-drift { to { background-position: -40px 0; } }
+@keyframes slot-b-drift-bits { to { background-position: -80px 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .omega-backdrop[data-moving], .omega-backdrop[data-style][data-moving] { animation: none; }
+  .slot-b-backdrop[data-moving], .slot-b-backdrop[data-style][data-moving] { animation: none; }
 }

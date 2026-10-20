@@ -1,7 +1,7 @@
 #!/bin/sh
 # Home Wi-Fi. BaseOS loads the driver and brings wlan0 up; association, DHCP and the saved
 # networks are the frontend's. The networks live on the card in Config/wifi.conf, in
-# wpa_supplicant's own format, so one can be added from a computer as well as from omega-zero.
+# wpa_supplicant's own format, so one can be added from a computer as well as from slot-b.
 set -u
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -22,11 +22,11 @@ IP="${AGS_IP:-ip}"
 TIMEDATECTL="${AGS_TIMEDATECTL:-timedatectl}"
 
 IFACE=wlan0
-UP_MARK="$RUN/omega-wifi.up"
-DHCP_PID="$RUN/omega-wifi-udhcpc.pid"
-EVENTS_PID="$RUN/omega-wifi-events.pid"
-HOOK="$RUN/omega-wifi-hook"
-LINK_MARK="$RUN/omega-link.session"
+UP_MARK="$RUN/slot-b-wifi.up"
+DHCP_PID="$RUN/slot-b-wifi-udhcpc.pid"
+EVENTS_PID="$RUN/slot-b-wifi-events.pid"
+HOOK="$RUN/slot-b-wifi-hook"
+LINK_MARK="$RUN/slot-b-link.session"
 
 cli() {
 	$WPA_CLI -p "$CTRL_DIR" -i "$IFACE" "$@" 2>/dev/null

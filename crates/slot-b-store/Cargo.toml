@@ -1,0 +1,12 @@
+[package]
+name = "slot-b-store"
+version = "1.2.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+unicode-normalization.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

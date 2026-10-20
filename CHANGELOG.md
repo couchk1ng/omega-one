@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+The project is now called Slot B: the binary is `System/slot-b`, its settings file is `Config/slot-b.state`, and its environment variables start `SLOT_B_`.
+
 Genesis and Mega Drive games run on Genesis Plus GX.
 
 - Genesis games go in `Games/Genesis` and Mega Drive games in `Games/MD`: a `.md`, `.gen`, `.smd` or
@@ -16,22 +18,22 @@ Genesis and Mega Drive games run on Genesis Plus GX.
 - The Genesis and Mega Drive have a cart of their own, one shape for both as the real carts share: a black rounded shell about 1.47 times as wide as it is tall, with a raised pillar down each side and a recess between them that holds the whole label. A label scan fills the recess as scanned, the grid band and logo included; a cart with no label gets a generated one, coloured art with the title and a dark grid band carrying the console's name, GENESIS or MEGA DRIVE. It is drawn from a retail Mega Drive cart photographed square on. Its front surface is flat across the label and rolls back at each end, as the pillars of a real cart do, about 13 mm across and 10 mm deep. The narrower foot behind is not modelled, and it still opens on a Super Famicom's board.
 - Labels are fetched from ScreenScraper's Mega Drive system, by the ROM's checksum or its name.
 
-## omega-zero 1.2.0
+## slot-b 1.2.0
 
 Supafaust runs SNES games, a game that takes the console down can no longer trap it at boot, and
 labels take a quarter of the room and no longer hold the boot.
 
-- SNES games run on Supafaust. Chosen with X, Supafaust took omega-zero down on a game's first
+- SNES games run on Supafaust. Chosen with X, Supafaust took slot-b down on a game's first
   frame and left the console on its boot screen: it forgets the defaults of its own options once
-  a game has loaded, and read an empty one back. omega-zero now answers every option a core
-  declares, with the core's own default where omega-zero sets none, as any libretro frontend does.
-- A game whose core takes omega-zero down as it starts is no longer opened again at every boot.
+  a game has loaded, and read an empty one back. slot-b now answers every option a core
+  declares, with the core's own default where slot-b sets none, as any libretro frontend does.
+- A game whose core takes slot-b down as it starts is no longer opened again at every boot.
   The next boot leaves it on the shelf, selected, rather than resume it, so the console can no
   longer get stuck on its boot screen over one game. That boot says so after the opening, on its
   terminal: which game went down, on which system and core, and how to try it another way. A, B
   or START goes on to the shelf once its prompt is up.
-- When omega-zero goes down, the card keeps what it last said in `crash/omega-zero.log` and its
-  whole memory as it went down in `crash/omega-zero.core.gz`, for a debugger. It starts again once
+- When slot-b goes down, the card keeps what it last said in `crash/slot-b.log` and its
+  whole memory as it went down in `crash/slot-b.core.gz`, for a debugger. It starts again once
   the core is written, some seconds later. A crash within ten minutes of the last keeps the first
   core, and none is written when it would leave the card less than 512 MB.
 - Labels take about a quarter of the room on the card. Once a label is cut to its cart, the
@@ -45,7 +47,7 @@ labels take a quarter of the room and no longer hold the boot.
   generated label and is drawn in its own on threads that stand back from the shelf and the
   game, the carts on screen first, a few a frame, while the opening plays.
 
-## omega-zero 1.1.0
+## slot-b 1.1.0
 
 The SNES and the PlayStation join the Game Boys: their games run, and they stand on shelves of
 their own, SNES carts and PlayStation discs modelled like the Game Boy carts.
@@ -73,7 +75,7 @@ their own, SNES carts and PlayStation discs modelled like the Game Boy carts.
 - Snes9x is free for non-commercial use only; Supafaust and PCSX ReARMed are GPL-2.0. Their
   licences and source are in `System/licenses/`.
 
-## omega-zero 1.0.1
+## slot-b 1.0.1
 
 The boot no longer waits on the labels: each one is cut to its cart once, as it is fetched.
 
@@ -85,15 +87,15 @@ The boot no longer waits on the labels: each one is cut to its cart once, as it 
   in the background after the boot, the carts on screen first, and wear a generated label until
   then.
 
-## omega-zero 1.0.0
+## slot-b 1.0.0
 
-Labels fetch in the build you download: omega-zero now has its own ScreenScraper key.
+Labels fetch in the build you download: slot-b now has its own ScreenScraper key.
 
 - Labels, in Settings, fetches the scanned label of every cart that has none in the release
   build too. Until now a release carried no ScreenScraper developer key, so the screen said it
   could not reach ScreenScraper. You still sign in with your own ScreenScraper account.
 
-## omega-zero 0.0.4
+## slot-b 0.0.4
 
 The slot under the shelf is gone: carts go down into the handheld, and the game comes on like a
 tube TV.
@@ -110,7 +112,7 @@ tube TV.
   seconds.
 - Config/theme.txt's `recess` and `opening` coloured only the slot and are no longer read.
 
-## omega-zero 0.0.3
+## slot-b 0.0.3
 
 Settings in the style of Mega Man Zero's menus, with Network, Bluetooth, Theme and a POWER menu;
 every screen drawn in the UI kit's 8/16-bit pixel art; carts as low-poly models drawn the way a
@@ -129,7 +131,7 @@ PlayStation drew 3D; and an opening after Mega Man X5's boot terminal at power-o
   screenshot is see-through any more.
 - Save states only save and load: Y no longer deletes the save shown, and X no longer undoes the
   last save or load.
-- `<omega-hints>` joins the UI kit: a screen's keys on one line of the kit, on a ground of their
+- `<slot-b-hints>` joins the UI kit: a screen's keys on one line of the kit, on a ground of their
   own, for where the bar's hints would sit on a picture.
 - The link screen (SELECT + MENU in a game) is drawn in the menus' kit: the theme's backdrop, a
   LINK panel with ROLE (HOST or JOIN, Left and Right swap it) and MODE (CABLE or WIRELESS,
@@ -159,25 +161,25 @@ PlayStation drew 3D; and an opening after Mega Man X5's boot terminal at power-o
   colours. The title and the cores' names are in Pixel Code at its own size and spacing. The
   chip hops between the sockets a pixel at a time, level, and the shadows under it and under
   the lid are checker dither.
-- About is a window like Settings, drawn in the menus' kit in place of the sticker. OMEGA-ZERO
+- About is a window like Settings, drawn in the menus' kit in place of the sticker. SLOT B
   lists the version, the build (its commit, with -DIRTY after it for a build with changes not
-  committed), the author, @oauramos, the handheld as BaseOS names it, and how full its
-  battery is and whether it is charging. CREDITS under it says what omega-zero is made with and
+  committed), where to find the author (the README), the handheld as BaseOS names it, and how full its
+  battery is and whether it is charging. CREDITS under it says what slot-b is made with and
   on, a line each. The barcode, the ANBERNIC wordmark and the made-up rating lines are gone.
 - A bar along the bottom of the shelf: SELECT CONTROLS on the left, START SETTINGS on the
   right. The slot sits a bar higher to make room for it.
 - Game Boy carts stand at 80% of their size on the shelf and grow to full size as they go into
   the slot.
 - The handheld starts on an old PC's BIOS screen, after Award's, in place of the logo: the
-  OmegaZero BIOS, "An Anbernic Ally", oauramos Software Inc., the H700, a memory test, BaseOS's
-  Plug and Play Extension and Press START to enter SETTINGS, with the OmegaZero logo in 16
+  Slot B BIOS, "An Anbernic Ally", Slot B Software Inc., the H700, a memory test, BaseOS's
+  Plug and Play Extension and Press START to enter SETTINGS, with the Slot B logo in 16
   colours where Award put its Energy Star. It is set in the opening's letters, where its
   terminal prints. `task bootlogos` renders it; `task bootlogos:logo` renders the old logo.
 - An opening after Mega Man X5's NOM ENGINEER WORK SYSTEM boot screen, told about the handheld
-  it runs on. omega-zero's first frames show the boot screen where the handheld drew it, and it
+  it runs on. slot-b's first frames show the boot screen where the handheld drew it, and it
   fades to black. Then a terminal fades in, in X5's wide mint letters and its beeps: the model,
   the memory counted up, the H700, the Mali-G31, the battery and its charge, a login as root,
-  `>omega -boot -a` typed out and three files read. After ten seconds it fades out and the shelf
+  `>slotb -boot -a` typed out and three files read. After ten seconds it fades out and the shelf
   fades in. Any button cuts it short, and that press does nothing on the shelf. Once the
   shelf shows through, a press ends the opening at once and works as usual. POWER and the lid
   end it at once. A boot back into a game, or to the clock, cuts as before.
@@ -202,7 +204,7 @@ PlayStation drew 3D; and an opening after Mega Man X5's boot terminal at power-o
   the password and port 22. SFTP uses the same login.
 - SSH ON starts the SSH server and OFF stops it, leaving a login already made to carry on; the
   card remembers which.
-- The first time omega-zero runs on a card whose `baseos.conf` sets no `ssh_password`, it gives
+- The first time slot-b runs on a card whose `baseos.conf` sets no `ssh_password`, it gives
   root a password of six random digits, at once and in `baseos.conf`, so BaseOS keeps it. A
   password you set there yourself is kept.
 - Cart Labels is no longer on the Wi-Fi screen: it is Labels, in Settings.
@@ -223,7 +225,7 @@ PlayStation drew 3D; and an opening after Mega Man X5's boot terminal at power-o
   picks the font of the bottom bar's big words, Bold or Thin.
 - Restart no longer freezes the console after Settings > Network has been open. The RTL8821CS's
   Wi-Fi driver hung the kernel's shutdown when it had just gone into its power saving, as it does
-  after scanning for networks, so the console stayed frozen until it was reset. omega-zero now
+  after scanning for networks, so the console stayed frozen until it was reset. slot-b now
   lets go of the driver itself before a restart or power off: wpa_supplicant and the DHCP client
   stop, the interfaces go down, and the device is unbound from its driver.
 - The top bar lights Wi-Fi and ssh within a second of a network being joined, and puts them out
@@ -252,23 +254,23 @@ PlayStation drew 3D; and an opening after Mega Man X5's boot terminal at power-o
   reference they are built to. Keys stand in for the buttons, slow motion runs the slides five
   times slower, and the URL's hash picks the screen, colour, panel size and any moment of a
   slide: `flow.html#screen=network&from=settings&t=0.5&colour=amber&shot=1`.
-- The storybook has three new components: `<omega-row>`, `<omega-list-row>` and `<omega-bar>`.
-- And four for pages, which the site is now drawn with: `<omega-button>`, `<omega-screen>`, `<omega-card>`, `<omega-code>`.
-- The kit is in Rust too, in `crates/omega-ui/src/kit/` (palette, pixel, modal, panel, action,
+- The storybook has three new components: `<slot-b-row>`, `<slot-b-list-row>` and `<slot-b-bar>`.
+- And four for pages, which the site is now drawn with: `<slot-b-button>`, `<slot-b-screen>`, `<slot-b-card>`, `<slot-b-code>`.
+- The kit is in Rust too, in `crates/slot-b-ui/src/kit/` (palette, pixel, modal, panel, action,
   row, list_row, bar, text, layout). `tests/suite/kit/` holds it to Chrome's screenshots of the
   HTML kit pixel for pixel; `make-refs.sh` takes them again.
-- Each menu screen's input and drawing is a file of its own in `crates/omega-zero/src/screens/`,
+- Each menu screen's input and drawing is a file of its own in `crates/slot-b/src/screens/`,
   its faces are made in `frontend/sync_*.rs`, and `nav.rs` slides between them.
-- `card/System/bluetooth.sh` drives the radio for omega-zero (up, down, status, scan on or off,
+- `card/System/bluetooth.sh` drives the radio for slot-b (up, down, status, scan on or off,
   pair, connect, disconnect, forget) and prints each device as a tab-separated line;
   `card/test-bluetooth.sh` tests it against fakes of BlueZ's tools.
-- The daemons wifi.sh and bluetooth.sh leave running, and a dropbear omega-zero starts again,
-  no longer hold the framebuffer open or share omega-zero's session and signals.
+- The daemons wifi.sh and bluetooth.sh leave running, and a dropbear slot-b starts again,
+  no longer hold the framebuffer open or share slot-b's session and signals.
 - Now that root's password is random, `task deploy:wifi` and `task log:wifi` log in with
   `CONSOLE_PASSWORD` or, without it, the first line of a git-ignored `.console-password` at the
   top of the repo.
 
-## omega-zero 0.0.2
+## slot-b 0.0.2
 
 - A cart leaning half off the screen is drawn whole on every GPU: some drivers dropped it for a
   frame. Turning carts go through a shader of their own and everything else through the one it
@@ -276,17 +278,17 @@ PlayStation drew 3D; and an opening after Mega Man X5's boot terminal at power-o
 
 ### For developers
 
-- `task deploy:wifi` builds omega-zero, copies it onto a console on the home network over SSH
+- `task deploy:wifi` builds slot-b, copies it onto a console on the home network over SSH
   and reboots into it; `task log:wifi` prints its log. `PROFILE=device-dev` builds in seconds.
 - Each crate's tests build as one binary, and the suite runs in about 42 s instead of 130 s.
 
-## omega-zero 0.0.1
+## slot-b 0.0.1
 
 The first release, for the RG35XX SP and the other H700 handhelds BaseOS runs on.
 
 ### Every panel, natively
 
-- omega-zero lays itself out for the panel it finds, from the model BaseOS names: 640x480 on
+- slot-b lays itself out for the panel it finds, from the model BaseOS names: 640x480 on
   the RG35XX SP instead of the RG SP's 720x480 picture shrunk to fit.
 - On a 640x480 panel, GBA games fill the width (640x427) through a sharp scaler, over the
   console's body carrying the GAME BOY ADVANCE logo. Game Boy games stay at 3x through the LCD
@@ -330,8 +332,8 @@ The first release, for the RG35XX SP and the other H700 handhelds BaseOS runs on
 - The carts on the shelf are solid. The one you are on floats and sways ten degrees either way,
   showing its edge, and every cart leans into a scroll. It squares up as it slides into the
   slot or opens for the core picker.
-- The boot logo is the OMEGA ZERO title in pixel art, edged in white, over the shelf's grid.
-  Its source is `assets/logo/omega-zero-logo.html`; `task bootlogos` renders it for every
+- The boot logo is the SLOT B title in pixel art, edged in white, over the shelf's grid.
+  Its source is `assets/logo/slot-b-logo.html`; `task bootlogos` renders it for every
   panel, and `STYLE=smooth` renders the drawn-straight version instead.
 - Y on the shelf shows the selected game's name in a pill above its cart or disc, and Y again takes
   it away; the card remembers which. The name is the ROM's file name with the tags in brackets taken
