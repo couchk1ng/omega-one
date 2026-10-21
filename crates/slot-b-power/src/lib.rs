@@ -41,6 +41,17 @@ pub enum LedState {
     Charged,
 }
 
+/// How a suspend ended.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Woke {
+    /// The handheld could not suspend, or the try failed: it never slept.
+    Awake,
+    /// It slept and its clock woke it, when the time asked for had passed.
+    Clock,
+    /// It slept and something else woke it: the lid, or a key.
+    Other,
+}
+
 pub trait Platform: Send {
     fn set_backlight(&mut self, step: u8);
     fn battery(&self) -> Option<Battery>;
@@ -54,6 +65,17 @@ pub trait Platform: Send {
     fn set_rumble(&mut self, strength: u16);
 
     fn relink_adb(&mut self) -> bool {
+        false
+    }
+
+    /// Suspends the whole handheld for up to `secs` seconds, until its clock or the lid or a
+    /// key wakes it. A handheld that cannot do this says so, and stays awake.
+    fn suspend(&mut self, _secs: u64) -> Woke {
+        Woke::Awake
+    }
+
+    /// Whether the lid is shut, for a handheld that can tell.
+    fn lid_shut(&self) -> bool {
         false
     }
 

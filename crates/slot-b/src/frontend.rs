@@ -66,7 +66,10 @@ use sync_start_notice::sync_start_notice;
 use sync_switcher::{sync_switcher, Switcher};
 use sync_top_bar::{sync_top_bar, TopBarTexes};
 
-const DOZE_TIMEOUT: Duration = Duration::from_secs(180);
+/// How long the lid may stay shut before the handheld powers off. It sleeps through this on a
+/// handheld that can suspend, and stays awake for the shorter of this and three minutes on one
+/// that cannot.
+const DOZE_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
 /// How many bytes of the faces the label workers hand back are uploaded in one frame, the rest
 /// left for the frames after, so a burst of them does not hold a frame up: four Game Boy Advance

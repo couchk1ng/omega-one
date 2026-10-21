@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::{Battery, Charge, LedState, Platform};
+use crate::{Battery, Charge, LedState, Platform, Woke};
 
 const TOP_STEP: u32 = 9;
 
@@ -144,6 +144,46 @@ impl DevicePlatform {
 
     pub fn trace_boot(&self) {
         self.breadcrumb("boot: platform up, trace working");
+    }
+
+    /// Whether a file named `no-lid-suspend` (or starting so, as Windows hides a `.txt` on the
+    /// end) lies in the card's Config folder: the switch that has the lid doze without suspending.
+    fn suspend_switched_off(&self) -> bool {
+        fs::read_dir(self.root.join("Config")).is_ok_and(|entries| {
+            entries.flatten().any(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .to_ascii_lowercase()
+                    .starts_with("no-lid-suspend")
+            })
+        })
+    }
+
+    /// The wake alarm of every clock the handheld has: any of them may be the one that works.
+    fn wake_alarms(&self) -> Vec<PathBuf> {
+        let Ok(entries) = fs::read_dir(self.sysfs.join("class/rtc")) else {
+            return Vec::new();
+        };
+        let mut alarms: Vec<PathBuf> = entries
+            .flatten()
+            .map(|e| e.path().join("wakealarm"))
+            .filter(|p| p.exists())
+            .collect();
+        alarms.sort();
+        alarms
+    }
+
+    fn hallkey(&self) -> Option<PathBuf> {
+        let mut supplies: Vec<PathBuf> = fs::read_dir(self.sysfs.join("class/power_supply"))
+            .ok()?
+            .flatten()
+            .map(|e| e.path())
+            .collect();
+        supplies.sort();
+        supplies
+            .into_iter()
+            .map(|d| d.join("hallkey"))
+            .find(|p| p.is_file())
     }
 
     pub fn report(&self) -> String {
@@ -603,6 +643,74 @@ impl Platform for DevicePlatform {
         self.breadcrumb("poweroff: signalled init, waiting for it to take the machine down");
         std::thread::sleep(Duration::from_secs(10));
         std::process::exit(0)
+    }
+
+    fn suspend(&mut self, secs: u64) -> Woke {
+        if self.suspend_switched_off() {
+            self.breadcrumb("lid: not suspending, a no-lid-suspend file is on the card");
+            return Woke::Awake;
+        }
+        let state = self.sysfs.join("power/state");
+        let offers_mem =
+            fs::read_to_string(&state).is_ok_and(|s| s.split_whitespace().any(|w| w == "mem"));
+        if !offers_mem {
+            self.breadcrumb("lid: not suspending, this kernel offers no mem suspend");
+            return Woke::Awake;
+        }
+        let alarms = self.wake_alarms();
+        let os_sleep = self
+            .battery
+            .as_ref()
+            .map(|d| d.join("os_sleep"))
+            .filter(|p| p.exists());
+        let percent = |p: &DevicePlatform| {
+            p.battery()
+                .map_or_else(|| "?".to_string(), |b| format!("{}%", b.percent))
+        };
+        let before = percent(self);
+        let began = self.now();
+        for alarm in &alarms {
+            let _ = fs::write(alarm, "0\n");
+            let _ = fs::write(alarm, format!("+{secs}\n"));
+        }
+        // Normal standby, the one the lid can wake: BaseOS sets 16 at every boot, which it cannot.
+        if let Some(path) = &os_sleep {
+            let _ = fs::write(path, "0\n");
+        }
+        let _ = Command::new("sync").status();
+        let slept = fs::write(&state, "mem");
+        if let Some(path) = &os_sleep {
+            let _ = fs::write(path, "16\n");
+        }
+        for alarm in &alarms {
+            let _ = fs::write(alarm, "0\n");
+        }
+        if let Err(e) = slept {
+            self.breadcrumb(&format!("lid: the suspend failed: {e}"));
+            return Woke::Awake;
+        }
+        let asleep = u64::try_from(self.now() - began).unwrap_or(0);
+        let clock = asleep + 2 >= secs;
+        self.breadcrumb(&format!(
+            "lid: asleep {asleep} s, battery {before} to {}, woken by {}",
+            percent(self),
+            if clock {
+                "the clock"
+            } else {
+                "the lid or a key"
+            }
+        ));
+        if clock {
+            Woke::Clock
+        } else {
+            Woke::Other
+        }
+    }
+
+    fn lid_shut(&self) -> bool {
+        self.hallkey()
+            .and_then(|p| fs::read_to_string(p).ok())
+            .is_some_and(|raw| raw.trim() == "0")
     }
 
     fn root(&self) -> &Path {

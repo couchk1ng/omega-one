@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use slot_b_power::{
-    motor_change, motor_pin, rumble_node, Battery, Charge, DevicePlatform, LedState, Platform,
+    motor_change, motor_pin, rumble_node, Battery, Charge, DevicePlatform, LedState, Platform, Woke,
 };
 use tempfile::TempDir;
 
@@ -368,4 +368,112 @@ fn headphones_follow_the_detection_pin() {
     assert!(platform(&d).headphones());
     with_jack(&d, "lo");
     assert!(!platform(&d).headphones());
+}
+
+/// A fake sysfs that can suspend: `mem` offered, two clocks with a wake alarm, and the chip's
+/// os_sleep setting.
+fn suspendable() -> TempDir {
+    let d = sysfs("255", "87");
+    fs::create_dir_all(d.path().join("power")).unwrap();
+    fs::write(d.path().join("power/state"), "freeze mem\n").unwrap();
+    for rtc in ["rtc0", "rtc1"] {
+        let dir = d.path().join("class/rtc").join(rtc);
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("wakealarm"), "").unwrap();
+    }
+    fs::write(
+        d.path().join("class/power_supply/axp2202-battery/os_sleep"),
+        "",
+    )
+    .unwrap();
+    d
+}
+
+fn card() -> TempDir {
+    let c = tempfile::tempdir().unwrap();
+    fs::create_dir_all(c.path().join("Config")).unwrap();
+    c
+}
+
+fn text(d: &TempDir, path: &str) -> String {
+    fs::read_to_string(d.path().join(path)).unwrap()
+}
+
+#[test]
+fn a_suspend_asks_for_mem_arms_every_clock_and_puts_the_chip_setting_back() {
+    let d = suspendable();
+    let c = card();
+    let mut p = DevicePlatform::probe(d.path(), c.path().to_path_buf());
+    assert_eq!(p.suspend(600), Woke::Other);
+    assert_eq!(text(&d, "power/state"), "mem");
+    assert_eq!(text(&d, "class/rtc/rtc0/wakealarm"), "0\n");
+    assert_eq!(text(&d, "class/rtc/rtc1/wakealarm"), "0\n");
+    assert_eq!(
+        text(&d, "class/power_supply/axp2202-battery/os_sleep"),
+        "16\n"
+    );
+    let trace = fs::read_to_string(c.path().join("ags-shutdown-trace.log")).unwrap();
+    assert!(trace.contains("lid: asleep 0 s, battery 87% to 87%, woken by the lid or a key"));
+}
+
+#[test]
+fn a_suspend_that_lasts_as_long_as_asked_was_the_clock() {
+    let d = suspendable();
+    let c = card();
+    let mut p = DevicePlatform::probe(d.path(), c.path().to_path_buf());
+    assert_eq!(p.suspend(1), Woke::Clock);
+}
+
+#[test]
+fn a_kernel_without_mem_suspend_stays_awake_and_touches_nothing() {
+    let d = suspendable();
+    fs::write(d.path().join("power/state"), "freeze\n").unwrap();
+    let c = card();
+    let mut p = DevicePlatform::probe(d.path(), c.path().to_path_buf());
+    assert_eq!(p.suspend(600), Woke::Awake);
+    assert_eq!(text(&d, "power/state"), "freeze\n");
+    assert_eq!(text(&d, "class/rtc/rtc0/wakealarm"), "");
+    assert_eq!(text(&d, "class/power_supply/axp2202-battery/os_sleep"), "");
+}
+
+#[test]
+fn a_handheld_with_no_power_state_file_stays_awake() {
+    let d = sysfs("255", "87");
+    let c = card();
+    let mut p = DevicePlatform::probe(d.path(), c.path().to_path_buf());
+    assert_eq!(p.suspend(600), Woke::Awake);
+}
+
+#[test]
+fn a_no_lid_suspend_file_on_the_card_keeps_it_awake() {
+    for name in ["no-lid-suspend", "no-lid-suspend.txt", "No-Lid-Suspend.TXT"] {
+        let d = suspendable();
+        let c = card();
+        fs::write(c.path().join("Config").join(name), "").unwrap();
+        let mut p = DevicePlatform::probe(d.path(), c.path().to_path_buf());
+        assert_eq!(p.suspend(600), Woke::Awake, "{name}");
+        assert_eq!(text(&d, "power/state"), "freeze mem\n", "{name}");
+    }
+}
+
+#[test]
+fn an_unrelated_file_in_config_does_not_stop_it() {
+    let d = suspendable();
+    let c = card();
+    fs::write(c.path().join("Config").join("lid-suspend"), "").unwrap();
+    let mut p = DevicePlatform::probe(d.path(), c.path().to_path_buf());
+    assert_ne!(p.suspend(600), Woke::Awake);
+}
+
+#[test]
+fn the_lid_is_shut_when_the_hall_file_reads_zero() {
+    let d = sysfs("255", "87");
+    let hall = d.path().join("class/power_supply/axp2202-battery/hallkey");
+    assert!(!platform(&d).lid_shut(), "no hall file");
+    fs::write(&hall, "0\n").unwrap();
+    assert!(platform(&d).lid_shut());
+    fs::write(&hall, "1\n").unwrap();
+    assert!(!platform(&d).lid_shut());
+    fs::write(&hall, "junk\n").unwrap();
+    assert!(!platform(&d).lid_shut());
 }

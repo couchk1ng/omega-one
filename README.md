@@ -41,6 +41,9 @@ Own an untested one? Say how it goes: a report of what works on it is the most u
   disc in, and the game resumes with the disc that was in the drive.
 - Resume on boot, save states with a switcher, rewind (not on the PlayStation), fast-forward,
   and turbo buttons on the Game Boys.
+- Close the lid and the handheld saves your game and sleeps, then wakes where you left off when you
+  open it. Left shut for 30 minutes it powers off. A file named `no-lid-suspend` in `Config` has the
+  lid only darken the screen, and power off after three minutes, as it did before.
 - Link play between two handhelds over Wi-Fi, for Game Boy and GBA games: Pokémon trades,
   Advance Wars, Mario Kart and Tetris.
 - Settings on START, in windows in the style of Mega Man Zero's menus that slide from screen to
